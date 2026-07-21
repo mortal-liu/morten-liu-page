@@ -294,28 +294,39 @@ export default function Home() {
         introTimeline?.kill();
         introExitTimeline = gsap
           .timeline({ defaults: { ease: "power3.inOut" }, onComplete: releaseIntro })
-          .to(".intro-content", { x: 46, filter: "blur(4px)", autoAlpha: 0, duration: 0.62, ease: "power2.in" }, 0.08)
-          .to(".intro-skip, .intro-halo", { x: 24, autoAlpha: 0, duration: 0.46 }, 0.04)
+          .set(".intro-wind-leaf", { x: -window.innerWidth * 0.18, autoAlpha: 0 })
+          .to(".intro-wind-leaf", { autoAlpha: 1, duration: 0.12, stagger: 0.02 }, 0)
+          .to(".intro-wind-leaf", {
+            x: window.innerWidth * 1.28,
+            y: () => gsap.utils.random(-48, 72),
+            rotate: () => gsap.utils.random(260, 680),
+            duration: 1.3,
+            stagger: 0.035,
+            ease: "power1.inOut",
+          }, 0)
+          .to(".intro-content", { x: 48, filter: "blur(4px)", autoAlpha: 0, duration: 0.58, ease: "power2.in" }, 0.4)
+          .to(".intro-skip, .intro-halo", { x: 26, autoAlpha: 0, duration: 0.48 }, 0.26)
           .to(".intro-tree", {
             x: `+=${window.innerWidth * 0.68}`,
             y: -34,
             rotate: 11,
             skewX: -2.5,
             autoAlpha: 0,
-            duration: 1.08,
+            duration: 1.15,
             ease: "power2.in",
-          }, 0)
+          }, 0.2)
           .to(".intro-leaf", {
             x: () => gsap.utils.random(90, 280),
             y: () => gsap.utils.random(-70, 64),
             rotate: () => gsap.utils.random(120, 360),
             autoAlpha: 0,
-            duration: 0.9,
+            duration: 0.95,
             stagger: 0.022,
             ease: "power2.in",
-          }, 0.12)
-          .fromTo("[data-home-reveal]", { yPercent: 82, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.88, stagger: 0.05 }, 0.3)
-          .to(intro, { autoAlpha: 0, duration: 0.68, ease: "sine.inOut" }, 0.5);
+          }, 0.3)
+          .fromTo("[data-home-reveal]", { yPercent: 82, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.88, stagger: 0.05 }, 0.78)
+          .to(".intro-wind-leaf", { autoAlpha: 0, duration: 0.25, stagger: 0.02 }, 1.3)
+          .to(intro, { autoAlpha: 0, duration: 0.65, ease: "sine.inOut" }, 1.22);
       };
 
       introTimeline = gsap
@@ -328,19 +339,7 @@ export default function Home() {
         .fromTo(".intro-leaf", { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.48, stagger: 0.028, ease: "back.out(1.8)" }, 0.54)
         .fromTo(".intro-letter", { yPercent: 145, rotateZ: 8 }, { yPercent: 0, rotateZ: 0, duration: 0.88, stagger: 0.045 }, 0.3)
         .fromTo(".intro-subline-inner", { yPercent: 120 }, { yPercent: 0, duration: 0.7 }, 0.76)
-        .fromTo(".intro-skip", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.42 }, 0.78)
-        .set(".intro-wind-leaf", { x: -window.innerWidth * 0.18, autoAlpha: 0 }, 0)
-        .to(".intro-tree", { rotate: -2.4, skewX: -1.2, transformOrigin: "50% 100%", duration: 0.72, ease: "sine.inOut" }, 1.02)
-        .to(".intro-wind-leaf", { autoAlpha: 1, duration: 0.12, stagger: 0.025 }, 0.96)
-        .to(".intro-wind-leaf", {
-          x: window.innerWidth * 1.28,
-          y: () => gsap.utils.random(-48, 72),
-          rotate: () => gsap.utils.random(260, 680),
-          duration: 1.22,
-          stagger: 0.036,
-          ease: "power1.inOut",
-        }, 0.96)
-        .to(".intro-wind-leaf", { autoAlpha: 0, duration: 0.2, stagger: 0.026 }, 2.08);
+        .fromTo(".intro-skip", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.42 }, 0.78);
 
       skipIntroRef.current = exitIntro;
     }
