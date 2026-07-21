@@ -10,18 +10,30 @@ const introQuotes = [
     source: "《你给的恨》",
     author: "Asen艾志恒",
     lang: "zh-CN",
+    medium: "MUSIC / SINGLE",
+    coverTitle: "你给的恨",
+    coverMeta: "ASEN · 2025",
+    theme: "clay",
   },
   {
     text: "从来如此，便对么？",
     source: "《狂人日记》",
     author: "鲁迅",
     lang: "zh-CN",
+    medium: "BOOK / LITERATURE",
+    coverTitle: "狂人日记",
+    coverMeta: "鲁迅 · 1918",
+    theme: "moss",
   },
   {
     text: "Who looks outside, dreams; who looks inside, awake.",
     source: "",
     author: "荣格",
     lang: "en",
+    medium: "WORDS / PSYCHOLOGY",
+    coverTitle: "LOOK WITHIN",
+    coverMeta: "C. G. JUNG",
+    theme: "ink",
   },
 ];
 
@@ -77,8 +89,8 @@ const quotes = [
 const notes = [
   {
     number: "001",
-    title: "关于慢",
-    body: "不是所有事情都需要立刻给出结果。慢一点，有时只是为了看清自己究竟在寻找什么。",
+    title: "关于观察",
+    body: "先记录发生过什么，再决定如何理解它。",
   },
   {
     number: "002",
@@ -111,6 +123,10 @@ export default function Home() {
     const quoteCounter = page.querySelector<HTMLElement>("[data-hero-quote-counter]");
     const pauseButton = page.querySelector<HTMLButtonElement>("[data-hero-pause]");
     const quoteStage = page.querySelector<HTMLElement>("[data-hero-quote-stage]");
+    const quoteHero = page.querySelector<HTMLElement>(".quote-hero");
+    const coverTitle = page.querySelector<HTMLElement>("[data-cover-title]");
+    const coverMedium = page.querySelector<HTMLElement>("[data-cover-medium]");
+    const coverMeta = page.querySelector<HTMLElement>("[data-cover-meta]");
     let entranceTimeline: gsap.core.Timeline | null = null;
     let exitTimeline: gsap.core.Timeline | null = null;
     let quoteTimeline: gsap.core.Timeline | null = null;
@@ -136,6 +152,10 @@ export default function Home() {
       if (quoteSource) {
         quoteSource.textContent = quote.source ? `${quote.source} · ${quote.author}` : quote.author;
       }
+      if (coverTitle) coverTitle.textContent = quote.coverTitle;
+      if (coverMedium) coverMedium.textContent = quote.medium;
+      if (coverMeta) coverMeta.textContent = quote.coverMeta;
+      quoteHero?.setAttribute("data-quote-theme", quote.theme);
       if (quoteCounter) quoteCounter.textContent = `${String(index + 1).padStart(2, "0")} / ${String(introQuotes.length).padStart(2, "0")}`;
     };
 
@@ -179,18 +199,26 @@ export default function Home() {
           duration: 0.46,
           stagger: 0.04,
         })
+        .to(".quote-cover-art, .quote-cover-caption", {
+          y: direction >= 0 ? -34 : 34,
+          rotateZ: direction >= 0 ? -2.5 : 2.5,
+          autoAlpha: 0,
+          duration: 0.4,
+        }, 0.04)
         .add(() => {
           quoteIndex = nextIndex;
           writeQuote(quoteIndex);
         })
         .set(".quote-hero-text, .quote-hero-attribution-inner", { y: enterY })
+        .set(".quote-cover-art, .quote-cover-caption", { y: direction >= 0 ? 36 : -36, rotateZ: direction >= 0 ? 2.5 : -2.5 })
         .to(".quote-hero-text, .quote-hero-attribution-inner", {
           y: 0,
           autoAlpha: 1,
           duration: 0.82,
           stagger: 0.055,
           ease: "power4.out",
-        });
+        })
+        .to(".quote-cover-art, .quote-cover-caption", { y: 0, rotateZ: 0, autoAlpha: 1, duration: 0.72, ease: "power4.out" }, "<0.06");
     };
 
     toggleHeroAutoplayRef.current = () => {
@@ -226,7 +254,6 @@ export default function Home() {
           .to(".intro-panel--bottom", { yPercent: 101, duration: 0.92 }, 0.42)
           .to(".intro-flash", { scaleX: 0, transformOrigin: "right", duration: 0.6 }, 0.45)
           .fromTo(".quote-hero [data-hero-reveal]", { yPercent: 118 }, { yPercent: 0, duration: 1.08, stagger: 0.075 }, 0.56)
-          .fromTo(".quote-hero-mark", { scale: 0, rotate: -45 }, { scale: 1, rotate: 0, duration: 0.9 }, 0.63)
           .fromTo(".topbar", { autoAlpha: 0, y: -18 }, { autoAlpha: 1, y: 0, duration: 0.72 }, 0.72);
       };
 
@@ -317,13 +344,6 @@ export default function Home() {
           scaleY: 1,
           ease: "none",
           scrollTrigger: { trigger: page, start: "top top", end: "bottom bottom", scrub: 0.18 },
-        });
-
-        gsap.to("[data-parallax]", {
-          yPercent: desktop ? 10 : 5,
-          scale: 1.045,
-          ease: "none",
-          scrollTrigger: { trigger: ".about-hero", start: "top bottom", end: "bottom top", scrub: 0.7 },
         });
 
         gsap.to("[data-marquee-track]", {
@@ -473,20 +493,20 @@ export default function Home() {
       <div className="page-frame">
         <header className="topbar" aria-label="主导航">
           <a className="monogram" data-magnetic href="#home" aria-label="回到主页顶部">
-            <span className="monogram-mark">M</span>
+            <span className="monogram-mark"><img src="/avatar.jpg" alt="" /></span>
             <span className="monogram-name">Morten Liu</span>
           </a>
           <p className="edition">Personal Notes · Vol. 02</p>
           <nav>
-            <a data-magnetic href="#about">关于</a>
+            <a data-magnetic href="#home">句子</a>
             <a data-magnetic href="#collections">收藏</a>
             <a data-magnetic href="#thoughts">札记</a>
           </nav>
         </header>
 
-        <section className="quote-hero" id="home" aria-label="Morten 喜欢的句子">
+        <section className="quote-hero" id="home" aria-label="Morten 喜欢的句子" data-quote-theme={introQuotes[0].theme}>
           <div className="quote-hero-grid" aria-hidden="true"><span /><span /><span /><span /><span /></div>
-          <div className="quote-hero-orbit" aria-hidden="true"><span className="quote-hero-mark" /></div>
+          <div className="quote-cover-backdrop" aria-hidden="true"><span /></div>
 
           <div className="quote-hero-heading hero-line">
             <p data-hero-reveal><span className="quote-hero-dot" />MORTEN—LIU · WORDS I KEEP CLOSE</p>
@@ -502,6 +522,17 @@ export default function Home() {
               </footer>
             </blockquote>
           </div>
+
+          <figure className="quote-cover hero-line" aria-label="当前句子的来源封面位置">
+            <div className="quote-cover-art" data-hero-reveal>
+              <span className="quote-cover-medium" data-cover-medium>{introQuotes[0].medium}</span>
+              <span className="quote-cover-index" aria-hidden="true">M—L / 001</span>
+              <strong data-cover-title>{introQuotes[0].coverTitle}</strong>
+              <span className="quote-cover-meta" data-cover-meta>{introQuotes[0].coverMeta}</span>
+              <i aria-hidden="true" />
+            </div>
+            <figcaption className="quote-cover-caption" data-hero-reveal>source object · cover archive</figcaption>
+          </figure>
 
           <div className="quote-hero-controls hero-line" aria-label="句子轮播控制">
             <div data-hero-reveal>
@@ -519,51 +550,8 @@ export default function Home() {
             </div>
           </div>
 
-          <aside className="quote-hero-signature hero-line">
-            <div data-hero-reveal>
-              <img src="/avatar.jpg" alt="" />
-              <p><strong>Morten Liu</strong><span>Collector of sounds, frames & words</span></p>
-            </div>
-          </aside>
-
-          <a className="quote-hero-scroll hero-line" data-magnetic href="#about">
-            <span data-hero-reveal>继续认识我 <i aria-hidden="true">↓</i></span>
-          </a>
-        </section>
-
-        <section className="hero about-hero" id="about" aria-labelledby="page-title">
-          <div className="hero-grid" aria-hidden="true">
-            <span /><span /><span /><span />
-          </div>
-          <div className="hero-orbit" aria-hidden="true"><span /></div>
-
-          <div className="hero-intro">
-            <p className="eyebrow"><span data-hero-reveal>A quiet introduction</span></p>
-            <h1 id="page-title">
-              <span className="hero-line"><span data-hero-reveal>Morten</span></span>
-              <span className="hero-line hero-line--outline"><span data-hero-reveal>— Liu</span></span>
-            </h1>
-            <div className="intro-copy">
-              <p className="intro-lead hero-line"><span data-hero-reveal>慢一点，认识我。</span></p>
-              <p className="hero-line"><span data-hero-reveal>这里收着我反复听的声音、喜欢的光影、舍不得忘记的句子，以及还没长成结论的想法。</span></p>
-            </div>
-          </div>
-
-          <figure className="portrait-frame" data-tilt>
-            <div className="portrait-corners" aria-hidden="true" />
-            <div className="portrait-image"><img data-parallax src="/avatar.jpg" alt="Morten-Liu 的树形水彩头像" /></div>
-            <figcaption>A small tree, still growing</figcaption>
-          </figure>
-
-          <aside className="hero-note" aria-label="个人寄语">
-            <p className="vertical-title">日常审美与私人片段</p>
-            <span className="seal" aria-hidden="true">木<br />心</span>
-            <blockquote>我喜欢那些不急着抵达，<br />却能留下余温的东西。</blockquote>
-            <p className="signature">— Morten, lately</p>
-          </aside>
-
-          <a className="scroll-cue" data-magnetic href="#collections">
-            <span>SCROLL TO ENTER</span><i aria-hidden="true">↓</i>
+          <a className="quote-hero-scroll hero-line" data-magnetic href="#collections">
+            <span data-hero-reveal>继续浏览 <i aria-hidden="true">↓</i></span>
           </a>
         </section>
 
