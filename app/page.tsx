@@ -56,7 +56,6 @@ export default function Home() {
   const pageRef = useRef<HTMLElement>(null);
   const skipIntroRef = useRef<() => void>(() => undefined);
   const changeQuoteRef = useRef<(direction: number) => void>(() => undefined);
-  const toggleAutoplayRef = useRef<() => void>(() => undefined);
   const openPanelRef = useRef<(panel: PanelId) => void>(() => undefined);
   const closePanelRef = useRef<() => void>(() => undefined);
 
@@ -76,7 +75,6 @@ export default function Home() {
     const coverTitle = page.querySelector<HTMLElement>("[data-cover-title]");
     const coverMedium = page.querySelector<HTMLElement>("[data-cover-medium]");
     const coverMeta = page.querySelector<HTMLElement>("[data-cover-meta]");
-    const pauseButton = page.querySelector<HTMLButtonElement>("[data-quote-pause]");
     const quoteStage = page.querySelector<HTMLElement>("[data-quote-stage]");
 
     let introTimeline: gsap.core.Timeline | null = null;
@@ -85,7 +83,6 @@ export default function Home() {
     let quoteProgress: gsap.core.Tween | null = null;
     let panelTimeline: gsap.core.Timeline | null = null;
     let quoteIndex = 0;
-    let autoplayPaused = false;
     let activePanel: PanelId | null = null;
     let introIsExiting = false;
     let panelIsTransitioning = false;
@@ -108,7 +105,7 @@ export default function Home() {
 
     const scheduleQuote = () => {
       quoteProgress?.kill();
-      if (autoplayPaused || activePanel || reducedMotion) return;
+      if (activePanel || reducedMotion) return;
       quoteProgress = gsap.delayedCall(6, () => changeQuoteRef.current(1));
     };
 
@@ -135,18 +132,6 @@ export default function Home() {
         .set(".quote-cover-art, .quote-cover-caption", { y: direction > 0 ? 30 : -30, rotateZ: direction > 0 ? 2 : -2 })
         .to(".quote-text, .quote-attribution-inner", { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.045, ease: "power4.out" })
         .to(".quote-cover-art, .quote-cover-caption", { y: 0, rotateZ: 0, autoAlpha: 1, duration: 0.68, ease: "power4.out" }, "<0.04");
-    };
-
-    toggleAutoplayRef.current = () => {
-      autoplayPaused = !autoplayPaused;
-      if (pauseButton) {
-        pauseButton.textContent = autoplayPaused ? "继续" : "暂停";
-        pauseButton.setAttribute("aria-pressed", String(autoplayPaused));
-        pauseButton.setAttribute("aria-label", autoplayPaused ? "继续自动轮换句子" : "暂停自动轮换句子");
-      }
-      if (autoplayPaused) quoteProgress?.pause();
-      else if (quoteProgress) quoteProgress.resume();
-      else scheduleQuote();
     };
 
     const revealPanelImmediately = (id: PanelId) => {
@@ -346,7 +331,7 @@ export default function Home() {
 
     const pauseOnHover = () => quoteProgress?.pause();
     const resumeAfterHover = () => {
-      if (!autoplayPaused && !activePanel) quoteProgress?.resume();
+      if (!activePanel) quoteProgress?.resume();
     };
     quoteStage?.addEventListener("pointerenter", pauseOnHover);
     quoteStage?.addEventListener("pointerleave", resumeAfterHover);
@@ -484,7 +469,6 @@ export default function Home() {
                 <div data-home-reveal data-home-return>
                   <button type="button" aria-label="上一句话" onClick={() => changeQuoteRef.current(-1)}>←</button>
                   <button type="button" aria-label="下一句话" onClick={() => changeQuoteRef.current(1)}>→</button>
-                  <button type="button" data-quote-pause aria-label="暂停自动轮换句子" aria-pressed="false" onClick={() => toggleAutoplayRef.current()}>暂停</button>
                   <span data-quote-counter>01 / 03</span>
                 </div>
               </div>

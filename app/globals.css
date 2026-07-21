@@ -748,10 +748,10 @@ button {
 
 .quote-tools > div {
   display: grid;
-  grid-template-columns: 32px 32px 52px 48px;
+  grid-template-columns: 32px 32px 48px;
   align-items: center;
   gap: 7px;
-  max-width: 220px;
+  max-width: 140px;
 }
 
 .quote-tools button {
@@ -1272,7 +1272,7 @@ button {
   .quote-stage blockquote[lang="en"] .quote-text { max-width: 100%; font-size: clamp(28px, 8.7vw, 39px); line-height: 1.14; }
   .quote-attribution-mask { font-size: 10px; letter-spacing: 0.06em; }
 
-  .quote-tools > div { grid-template-columns: 27px 27px 42px 40px; max-width: 150px; gap: 5px; }
+  .quote-tools > div { grid-template-columns: 27px 27px 40px; max-width: 112px; gap: 5px; }
   .quote-tools button { height: 27px; padding: 0 5px; font-size: 6px; }
   .quote-cover { width: 88px; }
   .quote-cover-art { padding: 9px; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28); }
