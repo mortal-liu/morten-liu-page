@@ -7,7 +7,7 @@ type PanelId = "story" | "favorites" | "pictures" | "thinking";
 
 const featuredQuotes = [
   {
-    text: "如果你也来自小镇，成功从来不靠等待",
+    text: "如果你也来自小镇，成功从来不靠等待。",
     source: "《你给的恨》",
     author: "Asen艾志恒",
     lang: "zh-CN",
@@ -183,7 +183,12 @@ export default function Home() {
 
       panelIsTransitioning = true;
       const color = getComputedStyle(sourceButton ?? target).getPropertyValue("--portal-color").trim() || "#263229";
+      const bounds = sourceButton?.getBoundingClientRect();
+      const originX = bounds ? bounds.left + bounds.width / 2 : window.innerWidth / 2;
+      const originY = bounds ? bounds.top + bounds.height / 2 : window.innerHeight / 2;
       transition.style.setProperty("--transition-color", color);
+      transition.style.setProperty("--origin-x", `${originX}px`);
+      transition.style.setProperty("--origin-y", `${originY}px`);
 
       panelTimeline = gsap
         .timeline({
@@ -194,19 +199,24 @@ export default function Home() {
           },
         })
         .set(transition, { autoAlpha: 1, pointerEvents: "auto" })
-        .set(".page-transition-curtain", { transformOrigin: "bottom", scaleY: 0 })
-        .fromTo(transitionLabel, { yPercent: 120, rotateX: -35 }, { yPercent: 0, rotateX: 0, duration: 0.72 }, 0.18)
-        .to(".page-transition-curtain", { scaleY: 1, duration: 0.78 }, 0)
+        .set(".page-transition-canopy", { clipPath: `circle(0% at ${originX}px ${originY}px)` })
+        .set(".transition-branch", { scaleX: 0, transformOrigin: "left center" })
+        .set(".transition-leaf", { scale: 0, rotate: -55, autoAlpha: 0 })
+        .to(".transition-branch", { scaleX: 1, duration: 0.72, stagger: 0.035, ease: "power3.out" }, 0)
+        .to(".transition-leaf", { scale: 1, rotate: 0, autoAlpha: 1, duration: 0.48, stagger: 0.025, ease: "back.out(1.7)" }, 0.16)
+        .to(".page-transition-canopy", { clipPath: `circle(155% at ${originX}px ${originY}px)`, duration: 0.94 }, 0.08)
+        .fromTo(transitionLabel, { yPercent: 120, rotateX: -35 }, { yPercent: 0, rotateX: 0, duration: 0.72 }, 0.34)
         .add(() => {
           gsap.set(homeScreen, { autoAlpha: 0, pointerEvents: "none" });
           gsap.set(target, { autoAlpha: 1, pointerEvents: "auto" });
           target.setAttribute("aria-hidden", "false");
           activePanel = id;
-        }, 0.72)
-        .set(".page-transition-curtain", { transformOrigin: "top" })
-        .to(transitionLabel, { yPercent: -120, duration: 0.45 }, 0.76)
-        .to(".page-transition-curtain", { scaleY: 0, duration: 0.78 }, 0.8)
-        .fromTo(target.querySelectorAll("[data-panel-reveal]"), { y: 42, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.06, ease: "power3.out" }, 0.92)
+        }, 0.88)
+        .to(transitionLabel, { yPercent: -120, duration: 0.42 }, 0.92)
+        .to(".transition-leaf", { y: -26, rotate: 28, autoAlpha: 0, duration: 0.52, stagger: 0.018 }, 0.94)
+        .to(".transition-branch", { scaleX: 0, transformOrigin: "right center", duration: 0.54, stagger: 0.018 }, 0.98)
+        .to(".page-transition-canopy", { clipPath: "circle(0% at 50% 0%)", duration: 0.86 }, 1.02)
+        .fromTo(target.querySelectorAll("[data-panel-reveal]"), { y: 42, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.06, ease: "power3.out" }, 1.08)
         .set(transition, { autoAlpha: 0, pointerEvents: "none" });
     };
 
@@ -229,7 +239,13 @@ export default function Home() {
       panelIsTransitioning = true;
       transitionLabel.textContent = "MORTEN—LIU";
       const color = getComputedStyle(target).getPropertyValue("--portal-color").trim() || "#263229";
+      const closeButton = target.querySelector<HTMLElement>("[data-panel-close]");
+      const closeBounds = closeButton?.getBoundingClientRect();
+      const originX = closeBounds ? closeBounds.left + closeBounds.width / 2 : window.innerWidth - 60;
+      const originY = closeBounds ? closeBounds.top + closeBounds.height / 2 : 50;
       transition.style.setProperty("--transition-color", color);
+      transition.style.setProperty("--origin-x", `${originX}px`);
+      transition.style.setProperty("--origin-y", `${originY}px`);
 
       panelTimeline = gsap
         .timeline({
@@ -241,19 +257,24 @@ export default function Home() {
           },
         })
         .set(transition, { autoAlpha: 1, pointerEvents: "auto" })
-        .set(".page-transition-curtain", { transformOrigin: "top", scaleY: 0 })
-        .to(".page-transition-curtain", { scaleY: 1, duration: 0.72 })
-        .fromTo(transitionLabel, { yPercent: 120 }, { yPercent: 0, duration: 0.6 }, 0.16)
+        .set(".page-transition-canopy", { clipPath: `circle(0% at ${originX}px ${originY}px)` })
+        .set(".transition-branch", { scaleX: 0, transformOrigin: "left center" })
+        .set(".transition-leaf", { scale: 0, rotate: 48, autoAlpha: 0, y: 0 })
+        .to(".transition-branch", { scaleX: 1, duration: 0.66, stagger: 0.03, ease: "power3.out" })
+        .to(".transition-leaf", { scale: 1, rotate: 0, autoAlpha: 1, duration: 0.45, stagger: 0.022, ease: "back.out(1.6)" }, 0.12)
+        .to(".page-transition-canopy", { clipPath: `circle(155% at ${originX}px ${originY}px)`, duration: 0.88 }, 0.06)
+        .fromTo(transitionLabel, { yPercent: 120 }, { yPercent: 0, duration: 0.6 }, 0.3)
         .add(() => {
           gsap.set(target, { autoAlpha: 0, pointerEvents: "none" });
           target.setAttribute("aria-hidden", "true");
           gsap.set(homeScreen, { autoAlpha: 1, pointerEvents: "auto" });
           activePanel = null;
-        }, 0.68)
-        .set(".page-transition-curtain", { transformOrigin: "bottom" })
-        .to(transitionLabel, { yPercent: -120, duration: 0.4 }, 0.72)
-        .to(".page-transition-curtain", { scaleY: 0, duration: 0.72 }, 0.76)
-        .fromTo("[data-home-return]", { y: 22, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.045, ease: "power3.out" }, 0.84)
+        }, 0.84)
+        .to(transitionLabel, { yPercent: -120, duration: 0.4 }, 0.88)
+        .to(".transition-leaf", { y: 30, rotate: -28, autoAlpha: 0, duration: 0.48, stagger: 0.016 }, 0.9)
+        .to(".transition-branch", { scaleX: 0, transformOrigin: "right center", duration: 0.5, stagger: 0.016 }, 0.94)
+        .to(".page-transition-canopy", { clipPath: "circle(0% at 50% 100%)", duration: 0.82 }, 0.98)
+        .fromTo("[data-home-return]", { y: 22, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.045, ease: "power3.out" }, 1.02)
         .set(transition, { autoAlpha: 0, pointerEvents: "none" });
     };
 
@@ -277,6 +298,8 @@ export default function Home() {
         introTimeline?.kill();
         introExitTimeline = gsap
           .timeline({ defaults: { ease: "power4.inOut" }, onComplete: releaseIntro })
+          .to(".intro-leaf", { y: -34, x: "random(-28, 28)", rotate: "random(-45, 45)", autoAlpha: 0, duration: 0.58, stagger: 0.018, ease: "power2.in" }, 0)
+          .to(".intro-tree", { scale: 1.22, autoAlpha: 0, duration: 0.62 }, 0.08)
           .to(".intro-word-wrap", { scale: 1.08, filter: "blur(10px)", autoAlpha: 0, duration: 0.46 }, 0)
           .to(".intro-tech, .intro-meta, .intro-skip", { autoAlpha: 0, duration: 0.25 }, 0)
           .fromTo(".intro-flash", { scaleX: 0 }, { scaleX: 1, duration: 0.38, ease: "power4.in" }, 0.16)
@@ -292,6 +315,9 @@ export default function Home() {
         .fromTo(".intro-grid-line", { scaleX: 0 }, { scaleX: 1, duration: 0.95, stagger: 0.04 }, 0)
         .fromTo(".intro-halo-ring", { scale: 0.18, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 1.1, stagger: 0.08 }, 0.08)
         .fromTo(".intro-signal-dot", { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.52 }, 0.18)
+        .fromTo(".intro-trunk", { scaleY: 0 }, { scaleY: 1, duration: 0.82, ease: "power3.inOut" }, 0.08)
+        .fromTo(".intro-branch", { scaleX: 0 }, { scaleX: 1, duration: 0.62, stagger: 0.055, ease: "power3.out" }, 0.34)
+        .fromTo(".intro-leaf", { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.48, stagger: 0.028, ease: "back.out(1.8)" }, 0.54)
         .fromTo(".intro-tech", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5 }, 0.18)
         .fromTo(".intro-letter", { yPercent: 145, rotateZ: 8 }, { yPercent: 0, rotateZ: 0, duration: 0.88, stagger: 0.045 }, 0.3)
         .fromTo(".intro-word-ghost--a", { xPercent: -18, autoAlpha: 0 }, { xPercent: 0, autoAlpha: 0.28, duration: 0.72 }, 0.42)
@@ -387,6 +413,15 @@ export default function Home() {
           <i className="intro-halo-ring" /><i className="intro-halo-ring" /><i className="intro-halo-ring" />
           <span className="intro-signal-dot" />
         </div>
+        <div className="intro-tree" aria-hidden="true">
+          <span className="intro-trunk" />
+          <span className="intro-branch intro-branch--1" /><span className="intro-branch intro-branch--2" />
+          <span className="intro-branch intro-branch--3" /><span className="intro-branch intro-branch--4" />
+          <span className="intro-branch intro-branch--5" /><span className="intro-branch intro-branch--6" />
+          <div className="intro-leaves">
+            {Array.from({ length: 18 }, (_, index) => <i className="intro-leaf" key={index} />)}
+          </div>
+        </div>
         <div className="intro-tech intro-tech--left" aria-hidden="true"><span>IDENTITY SIGNAL / 0316</span><span>31.2304° N · 121.4737° E</span></div>
         <div className="intro-tech intro-tech--right" aria-hidden="true"><span>PERSONAL ARCHIVE</span><span>EST. MMXXVI</span></div>
         <div className="intro-content">
@@ -408,8 +443,20 @@ export default function Home() {
 
       <div className="motion-cursor" aria-hidden="true"><span /></div>
 
+      <div className="tree-frame" aria-hidden="true">
+        <span className="frame-branch frame-branch--1" /><span className="frame-branch frame-branch--2" />
+        <span className="frame-branch frame-branch--3" /><span className="frame-branch frame-branch--4" />
+        {Array.from({ length: 12 }, (_, index) => <i className="frame-leaf" key={index} />)}
+      </div>
+
       <div className="page-transition" data-page-transition aria-hidden="true">
-        <div className="page-transition-curtain" />
+        <div className="page-transition-canopy" />
+        <div className="transition-tree" aria-hidden="true">
+          <span className="transition-branch transition-branch--1" /><span className="transition-branch transition-branch--2" />
+          <span className="transition-branch transition-branch--3" /><span className="transition-branch transition-branch--4" />
+          <span className="transition-branch transition-branch--5" /><span className="transition-branch transition-branch--6" />
+          {Array.from({ length: 14 }, (_, index) => <i className="transition-leaf" key={index} />)}
+        </div>
         <div className="transition-label-mask"><span data-transition-label>STORY</span></div>
       </div>
 
@@ -472,7 +519,7 @@ export default function Home() {
               >
                 <span>{portal.index}</span>
                 <span><strong>{portal.title}</strong><small>{portal.subtitle}</small></span>
-                <i aria-hidden="true">↗</i>
+                <i className="portal-leaf" aria-hidden="true"><b /></i>
               </button>
             ))}
           </nav>
