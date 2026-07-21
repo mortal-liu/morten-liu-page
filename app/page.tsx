@@ -2,9 +2,10 @@
 
 import { useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-const introQuotes = [
+type PanelId = "story" | "favorites" | "pictures" | "thinking";
+
+const featuredQuotes = [
   {
     text: "如果你也来自小镇，成功从来不靠等待",
     source: "《你给的恨》",
@@ -37,151 +38,92 @@ const introQuotes = [
   },
 ];
 
-const collections = [
-  {
-    index: "01",
-    id: "music",
-    title: "音乐",
-    en: "Sounds I return to",
-    description: "一些适合夜路、雨天和无人打扰的清晨的声音。",
-  },
-  {
-    index: "02",
-    id: "films",
-    title: "电影",
-    en: "Frames worth keeping",
-    description: "偏爱含蓄的镜头、漫长的停顿，以及被光记住的瞬间。",
-  },
-  {
-    index: "03",
-    id: "words",
-    title: "喜欢的文字",
-    en: "Words with an afterglow",
-    description: "收藏那些把复杂情绪说得很轻、却能停留很久的句子。",
-  },
-  {
-    index: "04",
-    id: "thoughts",
-    title: "一些想法",
-    en: "Notes in progress",
-    description: "关于独处、城市、关系与成长——允许反复修改的私人札记。",
-  },
+const portals: Array<{ id: PanelId; index: string; title: string; subtitle: string }> = [
+  { id: "story", index: "01", title: "STORY", subtitle: "人生经历" },
+  { id: "favorites", index: "02", title: "FAVORITES", subtitle: "音乐 · 电影 · 书" },
+  { id: "pictures", index: "03", title: "PICTURES", subtitle: "影像与瞬间" },
+  { id: "thinking", index: "04", title: "THINKING", subtitle: "一些想法" },
 ];
 
-const soundscapes = [
-  { number: "A", title: "凌晨两点", style: "Ambient · Piano", note: "适合走得很慢的夜路" },
-  { number: "B", title: "雨落以前", style: "Jazz · Voice", note: "窗边、咖啡与没写完的信" },
-  { number: "C", title: "没有歌词", style: "Post-rock · Instrumental", note: "让声音替情绪把话说完" },
-];
-
-const filmNotes = [
-  { number: "01", title: "漫长的停顿", note: "镜头不急着解释，人物也不急着回答。" },
-  { number: "02", title: "被光记住的城市", note: "街道、车窗、黄昏和一场迟迟不停的雨。" },
-  { number: "03", title: "关系里的留白", note: "比告别更难的，是始终没有说出的那部分。" },
-];
-
-const quotes = [
-  "生活需要一点没有用处的时间。",
-  "有些路并不通往答案，它只是把人慢慢带回自己。",
-  "真正喜欢的东西，会在很久以后仍然替你发光。",
-];
-
-const notes = [
-  {
-    number: "001",
-    title: "关于观察",
-    body: "先记录发生过什么，再决定如何理解它。",
-  },
-  {
-    number: "002",
-    title: "关于喜欢",
-    body: "喜欢一件事，不必急着让它变得有用。那些看似无用的投入，最后常常组成了一个人。",
-  },
-  {
-    number: "003",
-    title: "关于成长",
-    body: "成长可能不是变得更确定，而是学会带着不确定继续生活，并保留一点柔软。",
-  },
-];
+const panelTitles: Record<PanelId, string> = {
+  story: "STORY",
+  favorites: "FAVORITES",
+  pictures: "PICTURES",
+  thinking: "THINKING",
+};
 
 export default function Home() {
   const pageRef = useRef<HTMLElement>(null);
   const skipIntroRef = useRef<() => void>(() => undefined);
-  const changeHeroQuoteRef = useRef<(direction: number) => void>(() => undefined);
-  const toggleHeroAutoplayRef = useRef<() => void>(() => undefined);
+  const changeQuoteRef = useRef<(direction: number) => void>(() => undefined);
+  const toggleAutoplayRef = useRef<() => void>(() => undefined);
+  const openPanelRef = useRef<(panel: PanelId) => void>(() => undefined);
+  const closePanelRef = useRef<() => void>(() => undefined);
 
   useLayoutEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
     const page = pageRef.current;
     if (!page) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const intro = page.querySelector<HTMLElement>("[data-intro]");
     const introCount = page.querySelector<HTMLElement>("[data-intro-count]");
-    const quoteText = page.querySelector<HTMLElement>("[data-hero-quote-text]");
-    const quoteSource = page.querySelector<HTMLElement>("[data-hero-quote-source]");
-    const quoteCounter = page.querySelector<HTMLElement>("[data-hero-quote-counter]");
-    const pauseButton = page.querySelector<HTMLButtonElement>("[data-hero-pause]");
-    const quoteStage = page.querySelector<HTMLElement>("[data-hero-quote-stage]");
+    const homeScreen = page.querySelector<HTMLElement>("[data-home-screen]");
+    const transition = page.querySelector<HTMLElement>("[data-page-transition]");
+    const transitionLabel = page.querySelector<HTMLElement>("[data-transition-label]");
     const quoteHero = page.querySelector<HTMLElement>(".quote-hero");
+    const quoteText = page.querySelector<HTMLElement>("[data-quote-text]");
+    const quoteSource = page.querySelector<HTMLElement>("[data-quote-source]");
+    const quoteCounter = page.querySelector<HTMLElement>("[data-quote-counter]");
     const coverTitle = page.querySelector<HTMLElement>("[data-cover-title]");
     const coverMedium = page.querySelector<HTMLElement>("[data-cover-medium]");
     const coverMeta = page.querySelector<HTMLElement>("[data-cover-meta]");
-    let entranceTimeline: gsap.core.Timeline | null = null;
-    let exitTimeline: gsap.core.Timeline | null = null;
+    const pauseButton = page.querySelector<HTMLButtonElement>("[data-quote-pause]");
+    const quoteStage = page.querySelector<HTMLElement>("[data-quote-stage]");
+
+    let introTimeline: gsap.core.Timeline | null = null;
+    let introExitTimeline: gsap.core.Timeline | null = null;
     let quoteTimeline: gsap.core.Timeline | null = null;
-    let progressTween: gsap.core.Tween | null = null;
+    let quoteProgress: gsap.core.Tween | null = null;
+    let panelTimeline: gsap.core.Timeline | null = null;
     let quoteIndex = 0;
     let autoplayPaused = false;
-    let isExiting = false;
+    let activePanel: PanelId | null = null;
+    let introIsExiting = false;
+    let panelIsTransitioning = false;
     const counter = { value: 0 };
 
-    const releasePage = () => {
-      document.body.classList.remove("intro-lock");
-      if (intro) gsap.set(intro, { autoAlpha: 0, pointerEvents: "none" });
-      if (!reducedMotion) scheduleAutoplay();
-      ScrollTrigger.refresh();
-    };
+    document.body.classList.add("experience-lock");
 
     const writeQuote = (index: number) => {
-      const quote = introQuotes[index];
+      const quote = featuredQuotes[index];
       if (quoteText) {
         quoteText.textContent = quote.text;
         quoteText.closest("blockquote")?.setAttribute("lang", quote.lang);
       }
-      if (quoteSource) {
-        quoteSource.textContent = quote.source ? `${quote.source} · ${quote.author}` : quote.author;
-      }
+      if (quoteSource) quoteSource.textContent = quote.source ? `${quote.source} · ${quote.author}` : quote.author;
+      if (quoteCounter) quoteCounter.textContent = `${String(index + 1).padStart(2, "0")} / ${String(featuredQuotes.length).padStart(2, "0")}`;
       if (coverTitle) coverTitle.textContent = quote.coverTitle;
       if (coverMedium) coverMedium.textContent = quote.medium;
       if (coverMeta) coverMeta.textContent = quote.coverMeta;
       quoteHero?.setAttribute("data-quote-theme", quote.theme);
-      if (quoteCounter) quoteCounter.textContent = `${String(index + 1).padStart(2, "0")} / ${String(introQuotes.length).padStart(2, "0")}`;
     };
 
-    const scheduleAutoplay = () => {
-      progressTween?.kill();
-      gsap.set(".quote-hero-progress-fill", { scaleX: 0 });
-      if (autoplayPaused) return;
-      progressTween = gsap.to(".quote-hero-progress-fill", {
+    const scheduleQuote = () => {
+      quoteProgress?.kill();
+      gsap.set(".quote-progress-fill", { scaleX: 0 });
+      if (autoplayPaused || activePanel || reducedMotion) return;
+      quoteProgress = gsap.to(".quote-progress-fill", {
         scaleX: 1,
-        duration: 5.8,
+        duration: 6,
         ease: "none",
-        onComplete: () => changeHeroQuoteRef.current(1),
+        onComplete: () => changeQuoteRef.current(1),
       });
     };
 
-    const setAutoplayButton = () => {
-      if (!pauseButton) return;
-      pauseButton.textContent = autoplayPaused ? "继续" : "暂停";
-      pauseButton.setAttribute("aria-label", autoplayPaused ? "继续自动轮换句子" : "暂停自动轮换句子");
-      pauseButton.setAttribute("aria-pressed", String(autoplayPaused));
-    };
-
-    changeHeroQuoteRef.current = (direction: number) => {
-      if (quoteTimeline?.isActive()) return;
-      progressTween?.kill();
-      const nextIndex = (quoteIndex + direction + introQuotes.length) % introQuotes.length;
+    changeQuoteRef.current = (direction: number) => {
+      if (quoteTimeline?.isActive() || activePanel || panelIsTransitioning) return;
+      const nextIndex = (quoteIndex + direction + featuredQuotes.length) % featuredQuotes.length;
+      quoteProgress?.kill();
 
       if (reducedMotion) {
         quoteIndex = nextIndex;
@@ -189,75 +131,162 @@ export default function Home() {
         return;
       }
 
-      const leaveY = direction >= 0 ? -58 : 58;
-      const enterY = direction >= 0 ? 72 : -72;
       quoteTimeline = gsap
-        .timeline({ defaults: { ease: "power3.inOut" }, onComplete: scheduleAutoplay })
-        .to(".quote-hero-text, .quote-hero-attribution-inner", {
-          y: leaveY,
-          autoAlpha: 0,
-          duration: 0.46,
-          stagger: 0.04,
-        })
-        .to(".quote-cover-art, .quote-cover-caption", {
-          y: direction >= 0 ? -34 : 34,
-          rotateZ: direction >= 0 ? -2.5 : 2.5,
-          autoAlpha: 0,
-          duration: 0.4,
-        }, 0.04)
+        .timeline({ defaults: { ease: "power3.inOut" }, onComplete: scheduleQuote })
+        .to(".quote-text, .quote-attribution-inner", { y: direction > 0 ? -48 : 48, autoAlpha: 0, duration: 0.4, stagger: 0.035 })
+        .to(".quote-cover-art, .quote-cover-caption", { y: direction > 0 ? -26 : 26, rotateZ: direction > 0 ? -2 : 2, autoAlpha: 0, duration: 0.36 }, 0.04)
         .add(() => {
           quoteIndex = nextIndex;
           writeQuote(quoteIndex);
         })
-        .set(".quote-hero-text, .quote-hero-attribution-inner", { y: enterY })
-        .set(".quote-cover-art, .quote-cover-caption", { y: direction >= 0 ? 36 : -36, rotateZ: direction >= 0 ? 2.5 : -2.5 })
-        .to(".quote-hero-text, .quote-hero-attribution-inner", {
-          y: 0,
-          autoAlpha: 1,
-          duration: 0.82,
-          stagger: 0.055,
-          ease: "power4.out",
-        })
-        .to(".quote-cover-art, .quote-cover-caption", { y: 0, rotateZ: 0, autoAlpha: 1, duration: 0.72, ease: "power4.out" }, "<0.06");
+        .set(".quote-text, .quote-attribution-inner", { y: direction > 0 ? 54 : -54 })
+        .set(".quote-cover-art, .quote-cover-caption", { y: direction > 0 ? 30 : -30, rotateZ: direction > 0 ? 2 : -2 })
+        .to(".quote-text, .quote-attribution-inner", { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.045, ease: "power4.out" })
+        .to(".quote-cover-art, .quote-cover-caption", { y: 0, rotateZ: 0, autoAlpha: 1, duration: 0.68, ease: "power4.out" }, "<0.04");
     };
 
-    toggleHeroAutoplayRef.current = () => {
+    toggleAutoplayRef.current = () => {
       autoplayPaused = !autoplayPaused;
-      setAutoplayButton();
-      if (autoplayPaused) {
-        progressTween?.pause();
-      } else if (progressTween) {
-        progressTween.resume();
-      } else {
-        scheduleAutoplay();
+      if (pauseButton) {
+        pauseButton.textContent = autoplayPaused ? "继续" : "暂停";
+        pauseButton.setAttribute("aria-pressed", String(autoplayPaused));
+        pauseButton.setAttribute("aria-label", autoplayPaused ? "继续自动轮换句子" : "暂停自动轮换句子");
       }
+      if (autoplayPaused) quoteProgress?.pause();
+      else if (quoteProgress) quoteProgress.resume();
+      else scheduleQuote();
+    };
+
+    const revealPanelImmediately = (id: PanelId) => {
+      const target = page.querySelector<HTMLElement>(`[data-panel="${id}"]`);
+      if (!target || !homeScreen) return;
+      gsap.set(homeScreen, { autoAlpha: 0, pointerEvents: "none" });
+      gsap.set(target, { autoAlpha: 1, pointerEvents: "auto" });
+      target.setAttribute("aria-hidden", "false");
+      activePanel = id;
+    };
+
+    openPanelRef.current = (id: PanelId) => {
+      if (activePanel || panelIsTransitioning) return;
+      const target = page.querySelector<HTMLElement>(`[data-panel="${id}"]`);
+      const sourceButton = page.querySelector<HTMLElement>(`[data-portal="${id}"]`);
+      if (!target || !homeScreen || !transition || !transitionLabel) return;
+
+      quoteProgress?.pause();
+      transitionLabel.textContent = panelTitles[id];
+
+      if (reducedMotion) {
+        revealPanelImmediately(id);
+        target.querySelector<HTMLButtonElement>("[data-panel-close]")?.focus();
+        return;
+      }
+
+      panelIsTransitioning = true;
+      const color = getComputedStyle(sourceButton ?? target).getPropertyValue("--portal-color").trim() || "#263229";
+      transition.style.setProperty("--transition-color", color);
+
+      panelTimeline = gsap
+        .timeline({
+          defaults: { ease: "power4.inOut" },
+          onComplete: () => {
+            panelIsTransitioning = false;
+            target.querySelector<HTMLButtonElement>("[data-panel-close]")?.focus();
+          },
+        })
+        .set(transition, { autoAlpha: 1, pointerEvents: "auto" })
+        .set(".page-transition-curtain", { transformOrigin: "bottom", scaleY: 0 })
+        .fromTo(transitionLabel, { yPercent: 120, rotateX: -35 }, { yPercent: 0, rotateX: 0, duration: 0.72 }, 0.18)
+        .to(".page-transition-curtain", { scaleY: 1, duration: 0.78 }, 0)
+        .add(() => {
+          gsap.set(homeScreen, { autoAlpha: 0, pointerEvents: "none" });
+          gsap.set(target, { autoAlpha: 1, pointerEvents: "auto" });
+          target.setAttribute("aria-hidden", "false");
+          activePanel = id;
+        }, 0.72)
+        .set(".page-transition-curtain", { transformOrigin: "top" })
+        .to(transitionLabel, { yPercent: -120, duration: 0.45 }, 0.76)
+        .to(".page-transition-curtain", { scaleY: 0, duration: 0.78 }, 0.8)
+        .fromTo(target.querySelectorAll("[data-panel-reveal]"), { y: 42, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.06, ease: "power3.out" }, 0.92)
+        .set(transition, { autoAlpha: 0, pointerEvents: "none" });
+    };
+
+    closePanelRef.current = () => {
+      if (!activePanel || panelIsTransitioning || !homeScreen || !transition || !transitionLabel) return;
+      const closingId = activePanel;
+      const target = page.querySelector<HTMLElement>(`[data-panel="${closingId}"]`);
+      if (!target) return;
+
+      if (reducedMotion) {
+        gsap.set(target, { autoAlpha: 0, pointerEvents: "none" });
+        target.setAttribute("aria-hidden", "true");
+        gsap.set(homeScreen, { autoAlpha: 1, pointerEvents: "auto" });
+        activePanel = null;
+        scheduleQuote();
+        page.querySelector<HTMLButtonElement>(`[data-portal="${closingId}"]`)?.focus();
+        return;
+      }
+
+      panelIsTransitioning = true;
+      transitionLabel.textContent = "MORTEN—LIU";
+      const color = getComputedStyle(target).getPropertyValue("--portal-color").trim() || "#263229";
+      transition.style.setProperty("--transition-color", color);
+
+      panelTimeline = gsap
+        .timeline({
+          defaults: { ease: "power4.inOut" },
+          onComplete: () => {
+            panelIsTransitioning = false;
+            scheduleQuote();
+            page.querySelector<HTMLButtonElement>(`[data-portal="${closingId}"]`)?.focus();
+          },
+        })
+        .set(transition, { autoAlpha: 1, pointerEvents: "auto" })
+        .set(".page-transition-curtain", { transformOrigin: "top", scaleY: 0 })
+        .to(".page-transition-curtain", { scaleY: 1, duration: 0.72 })
+        .fromTo(transitionLabel, { yPercent: 120 }, { yPercent: 0, duration: 0.6 }, 0.16)
+        .add(() => {
+          gsap.set(target, { autoAlpha: 0, pointerEvents: "none" });
+          target.setAttribute("aria-hidden", "true");
+          gsap.set(homeScreen, { autoAlpha: 1, pointerEvents: "auto" });
+          activePanel = null;
+        }, 0.68)
+        .set(".page-transition-curtain", { transformOrigin: "bottom" })
+        .to(transitionLabel, { yPercent: -120, duration: 0.4 }, 0.72)
+        .to(".page-transition-curtain", { scaleY: 0, duration: 0.72 }, 0.76)
+        .fromTo("[data-home-return]", { y: 22, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.045, ease: "power3.out" }, 0.84)
+        .set(transition, { autoAlpha: 0, pointerEvents: "none" });
+    };
+
+    const releaseIntro = () => {
+      document.body.classList.remove("intro-lock");
+      if (intro) gsap.set(intro, { autoAlpha: 0, pointerEvents: "none" });
+      scheduleQuote();
     };
 
     writeQuote(quoteIndex);
 
     if (reducedMotion) {
-      releasePage();
-      gsap.set("[data-hero-reveal]", { yPercent: 0 });
+      releaseIntro();
+      gsap.set("[data-home-reveal]", { yPercent: 0, autoAlpha: 1 });
     } else {
       document.body.classList.add("intro-lock");
 
       const exitIntro = () => {
-        if (isExiting) return;
-        isExiting = true;
-        entranceTimeline?.kill();
-        exitTimeline = gsap
-          .timeline({ defaults: { ease: "power4.inOut" }, onComplete: releasePage })
+        if (introIsExiting) return;
+        introIsExiting = true;
+        introTimeline?.kill();
+        introExitTimeline = gsap
+          .timeline({ defaults: { ease: "power4.inOut" }, onComplete: releaseIntro })
           .to(".intro-word-wrap", { scale: 1.08, filter: "blur(10px)", autoAlpha: 0, duration: 0.46 }, 0)
           .to(".intro-tech, .intro-meta, .intro-skip", { autoAlpha: 0, duration: 0.25 }, 0)
           .fromTo(".intro-flash", { scaleX: 0 }, { scaleX: 1, duration: 0.38, ease: "power4.in" }, 0.16)
           .to(".intro-panel--top", { yPercent: -101, duration: 0.92 }, 0.42)
           .to(".intro-panel--bottom", { yPercent: 101, duration: 0.92 }, 0.42)
           .to(".intro-flash", { scaleX: 0, transformOrigin: "right", duration: 0.6 }, 0.45)
-          .fromTo(".quote-hero [data-hero-reveal]", { yPercent: 118 }, { yPercent: 0, duration: 1.08, stagger: 0.075 }, 0.56)
-          .fromTo(".topbar", { autoAlpha: 0, y: -18 }, { autoAlpha: 1, y: 0, duration: 0.72 }, 0.72);
+          .fromTo("[data-home-reveal]", { yPercent: 112, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.92, stagger: 0.055 }, 0.58);
       };
 
-      entranceTimeline = gsap
+      introTimeline = gsap
         .timeline({ defaults: { ease: "power4.out" }, onComplete: exitIntro })
         .set(intro, { autoAlpha: 1, animation: "none" })
         .fromTo(".intro-grid-line", { scaleX: 0 }, { scaleX: 1, duration: 0.95, stagger: 0.04 }, 0)
@@ -285,100 +314,40 @@ export default function Home() {
       skipIntroRef.current = exitIntro;
     }
 
-    const onPageKeydown = (event: KeyboardEvent) => {
-      const introVisible = intro && gsap.getProperty(intro, "visibility") !== "hidden";
-      if (event.key === "Escape" && introVisible) skipIntroRef.current();
-      if (event.key === "ArrowLeft" && !introVisible) changeHeroQuoteRef.current(-1);
-      if (event.key === "ArrowRight" && !introVisible) changeHeroQuoteRef.current(1);
-      if (event.key === " " && !introVisible) {
-        event.preventDefault();
-        toggleHeroAutoplayRef.current();
-      }
-    };
-    document.addEventListener("keydown", onPageKeydown);
-
-    const pauseOnHover = () => progressTween?.pause();
+    const pauseOnHover = () => quoteProgress?.pause();
     const resumeAfterHover = () => {
-      if (!autoplayPaused) progressTween?.resume();
+      if (!autoplayPaused && !activePanel) quoteProgress?.resume();
     };
     quoteStage?.addEventListener("pointerenter", pauseOnHover);
     quoteStage?.addEventListener("pointerleave", resumeAfterHover);
 
-    const motion = gsap.matchMedia(page);
-    motion.add(
-      {
-        desktop: "(min-width: 861px)",
-        mobile: "(max-width: 860px)",
-        reduceMotion: "(prefers-reduced-motion: reduce)",
-      },
-      (context) => {
-        const { desktop, reduceMotion: shouldReduce } = context.conditions as {
-          desktop: boolean;
-          mobile: boolean;
-          reduceMotion: boolean;
-        };
-
-        if (shouldReduce) {
-          gsap.set("[data-reveal-item]", { autoAlpha: 1, y: 0 });
-          return;
-        }
-
-        page.querySelectorAll<HTMLElement>("[data-reveal]").forEach((section) => {
-          const items = section.querySelectorAll<HTMLElement>("[data-reveal-item]");
-          if (!items.length) return;
-          gsap.fromTo(
-            items,
-            { autoAlpha: 0, y: 58 },
-            {
-              autoAlpha: 1,
-              y: 0,
-              duration: 1.05,
-              stagger: 0.095,
-              ease: "power3.out",
-              scrollTrigger: { trigger: section, start: "top 78%", once: true },
-            },
-          );
-        });
-
-        gsap.to(".scroll-progress-fill", {
-          scaleY: 1,
-          ease: "none",
-          scrollTrigger: { trigger: page, start: "top top", end: "bottom bottom", scrub: 0.18 },
-        });
-
-        gsap.to("[data-marquee-track]", {
-          xPercent: desktop ? -22 : -10,
-          ease: "none",
-          scrollTrigger: { trigger: ".motion-marquee", start: "top bottom", end: "bottom top", scrub: 0.8 },
-        });
-
-        gsap.to(".words-chapter", {
-          backgroundColor: "#263229",
-          color: "#f3eee2",
-          scrollTrigger: {
-            trigger: ".words-chapter",
-            start: "top 68%",
-            end: "top 24%",
-            scrub: 0.65,
-          },
-        });
-      },
-    );
+    const onKeydown = (event: KeyboardEvent) => {
+      const introVisible = intro && gsap.getProperty(intro, "visibility") !== "hidden";
+      if (event.key === "Escape") {
+        if (introVisible) skipIntroRef.current();
+        else if (activePanel) closePanelRef.current();
+      }
+      if (!introVisible && !activePanel) {
+        if (event.key === "ArrowLeft") changeQuoteRef.current(-1);
+        if (event.key === "ArrowRight") changeQuoteRef.current(1);
+      }
+    };
+    document.addEventListener("keydown", onKeydown);
 
     const cleanups: Array<() => void> = [];
     if (!reducedMotion && window.matchMedia("(pointer: fine)").matches) {
       const cursor = page.querySelector<HTMLElement>(".motion-cursor");
       if (cursor) {
-        const cursorX = gsap.quickTo(cursor, "x", { duration: 0.32, ease: "power3.out" });
-        const cursorY = gsap.quickTo(cursor, "y", { duration: 0.32, ease: "power3.out" });
-        const moveCursor = (event: PointerEvent) => {
-          cursorX(event.clientX);
-          cursorY(event.clientY);
+        const moveX = gsap.quickTo(cursor, "x", { duration: 0.28, ease: "power3.out" });
+        const moveY = gsap.quickTo(cursor, "y", { duration: 0.28, ease: "power3.out" });
+        const move = (event: PointerEvent) => {
+          moveX(event.clientX);
+          moveY(event.clientY);
         };
-        window.addEventListener("pointermove", moveCursor);
-        cleanups.push(() => window.removeEventListener("pointermove", moveCursor));
+        window.addEventListener("pointermove", move);
+        cleanups.push(() => window.removeEventListener("pointermove", move));
 
-        page.querySelectorAll<HTMLElement>("a, button, [data-tilt]").forEach((target) => {
+        page.querySelectorAll<HTMLElement>("button, a").forEach((target) => {
           const enter = () => cursor.classList.add("is-active");
           const leave = () => cursor.classList.remove("is-active");
           target.addEventListener("pointerenter", enter);
@@ -389,59 +358,19 @@ export default function Home() {
           });
         });
       }
-
-      page.querySelectorAll<HTMLElement>("[data-magnetic]").forEach((element) => {
-        const moveX = gsap.quickTo(element, "x", { duration: 0.45, ease: "power3.out" });
-        const moveY = gsap.quickTo(element, "y", { duration: 0.45, ease: "power3.out" });
-        const move = (event: PointerEvent) => {
-          const bounds = element.getBoundingClientRect();
-          moveX((event.clientX - bounds.left - bounds.width / 2) * 0.16);
-          moveY((event.clientY - bounds.top - bounds.height / 2) * 0.16);
-        };
-        const leave = () => {
-          moveX(0);
-          moveY(0);
-        };
-        element.addEventListener("pointermove", move);
-        element.addEventListener("pointerleave", leave);
-        cleanups.push(() => {
-          element.removeEventListener("pointermove", move);
-          element.removeEventListener("pointerleave", leave);
-        });
-      });
-
-      page.querySelectorAll<HTMLElement>("[data-tilt]").forEach((card) => {
-        const rotateX = gsap.quickTo(card, "rotationX", { duration: 0.42, ease: "power3.out" });
-        const rotateY = gsap.quickTo(card, "rotationY", { duration: 0.42, ease: "power3.out" });
-        const move = (event: PointerEvent) => {
-          const bounds = card.getBoundingClientRect();
-          rotateY(((event.clientX - bounds.left) / bounds.width - 0.5) * 8);
-          rotateX(((event.clientY - bounds.top) / bounds.height - 0.5) * -7);
-        };
-        const leave = () => {
-          rotateX(0);
-          rotateY(0);
-        };
-        card.addEventListener("pointermove", move);
-        card.addEventListener("pointerleave", leave);
-        cleanups.push(() => {
-          card.removeEventListener("pointermove", move);
-          card.removeEventListener("pointerleave", leave);
-        });
-      });
     }
 
     return () => {
-      entranceTimeline?.kill();
-      exitTimeline?.kill();
+      introTimeline?.kill();
+      introExitTimeline?.kill();
       quoteTimeline?.kill();
-      progressTween?.kill();
-      motion.revert();
-      cleanups.forEach((cleanup) => cleanup());
-      document.removeEventListener("keydown", onPageKeydown);
+      quoteProgress?.kill();
+      panelTimeline?.kill();
       quoteStage?.removeEventListener("pointerenter", pauseOnHover);
       quoteStage?.removeEventListener("pointerleave", resumeAfterHover);
-      document.body.classList.remove("intro-lock");
+      document.removeEventListener("keydown", onKeydown);
+      cleanups.forEach((cleanup) => cleanup());
+      document.body.classList.remove("intro-lock", "experience-lock");
     };
   }, []);
 
@@ -458,13 +387,9 @@ export default function Home() {
           <i className="intro-halo-ring" /><i className="intro-halo-ring" /><i className="intro-halo-ring" />
           <span className="intro-signal-dot" />
         </div>
-        <div className="intro-tech intro-tech--left" aria-hidden="true">
-          <span>IDENTITY SIGNAL / 0316</span><span>31.2304° N · 121.4737° E</span>
-        </div>
-        <div className="intro-tech intro-tech--right" aria-hidden="true">
-          <span>PERSONAL ARCHIVE</span><span>EST. MMXXVI</span>
-        </div>
-        <div className="intro-content intro-content--cinematic">
+        <div className="intro-tech intro-tech--left" aria-hidden="true"><span>IDENTITY SIGNAL / 0316</span><span>31.2304° N · 121.4737° E</span></div>
+        <div className="intro-tech intro-tech--right" aria-hidden="true"><span>PERSONAL ARCHIVE</span><span>EST. MMXXVI</span></div>
+        <div className="intro-content">
           <div className="intro-word-wrap" aria-label="Morten Liu">
             <div className="intro-word">
               {"MORTEN—LIU".split("").map((letter, index) => (
@@ -476,208 +401,163 @@ export default function Home() {
           </div>
           <div className="intro-subline"><span className="intro-subline-inner">A QUIET WORLD · TRANSMITTED LOUDLY</span></div>
         </div>
-        <div className="intro-meta">
-          <span data-intro-count>000</span>
-          <div className="intro-rule"><span className="intro-rule-fill" /></div>
-          <span>CALIBRATING PRIVATE FREQUENCY</span>
-        </div>
-        <button className="intro-skip" type="button" onClick={() => skipIntroRef.current()}>
-          SKIP INTRO <span aria-hidden="true">↘</span>
-        </button>
+        <div className="intro-meta"><span data-intro-count>000</span><div className="intro-rule"><span className="intro-rule-fill" /></div><span>CALIBRATING PRIVATE FREQUENCY</span></div>
+        <button className="intro-skip" type="button" onClick={() => skipIntroRef.current()}>SKIP INTRO <span aria-hidden="true">↘</span></button>
         <div className="intro-flash" aria-hidden="true" />
       </div>
 
       <div className="motion-cursor" aria-hidden="true"><span /></div>
-      <div className="scroll-progress" aria-hidden="true"><span className="scroll-progress-fill" /></div>
 
-      <div className="page-frame">
-        <header className="topbar" aria-label="主导航">
-          <a className="monogram" data-magnetic href="#home" aria-label="回到主页顶部">
+      <div className="page-transition" data-page-transition aria-hidden="true">
+        <div className="page-transition-curtain" />
+        <div className="transition-label-mask"><span data-transition-label>STORY</span></div>
+      </div>
+
+      <div className="home-screen" data-home-screen>
+        <header className="topbar" data-home-return>
+          <a className="monogram" href="#home" aria-label="回到主页">
             <span className="monogram-mark"><img src="/avatar.jpg" alt="" /></span>
             <span className="monogram-name">Morten Liu</span>
           </a>
-          <p className="edition">Personal Notes · Vol. 02</p>
-          <nav>
-            <a data-magnetic href="#home">句子</a>
-            <a data-magnetic href="#collections">收藏</a>
-            <a data-magnetic href="#thoughts">札记</a>
-          </nav>
+          <p>PERSONAL ARCHIVE · VOL. 03</p>
+          <span className="topbar-status"><i /> ONLINE / 2026</span>
         </header>
 
-        <section className="quote-hero" id="home" aria-label="Morten 喜欢的句子" data-quote-theme={introQuotes[0].theme}>
-          <div className="quote-hero-grid" aria-hidden="true"><span /><span /><span /><span /><span /></div>
-          <div className="quote-cover-backdrop" aria-hidden="true"><span /></div>
+        <section className="quote-hero" id="home" aria-label="Morten 喜欢的句子" data-quote-theme={featuredQuotes[0].theme}>
+          <div className="quote-backdrop" aria-hidden="true"><span /></div>
+          <div className="quote-heading clip-line"><p data-home-reveal><i /> WORDS I KEEP CLOSE</p><span data-home-reveal>SELECTED / 001—003</span></div>
 
-          <div className="quote-hero-heading hero-line">
-            <p data-hero-reveal><span className="quote-hero-dot" />MORTEN—LIU · WORDS I KEEP CLOSE</p>
-          </div>
-
-          <div className="quote-hero-stage" data-hero-quote-stage>
-            <blockquote lang={introQuotes[0].lang}>
-              <div className="quote-hero-text-mask hero-line">
-                <p className="quote-hero-text" data-hero-reveal data-hero-quote-text>{introQuotes[0].text}</p>
+          <div className="quote-main">
+            <div className="quote-left">
+              <div className="quote-stage" data-quote-stage>
+                <blockquote lang={featuredQuotes[0].lang}>
+                  <div className="quote-text-mask clip-line"><p className="quote-text" data-home-reveal data-quote-text>{featuredQuotes[0].text}</p></div>
+                  <footer className="quote-attribution-mask clip-line"><span className="quote-attribution-inner" data-home-reveal>— <span data-quote-source>{featuredQuotes[0].source} · {featuredQuotes[0].author}</span></span></footer>
+                </blockquote>
               </div>
-              <footer className="quote-hero-attribution-mask hero-line">
-                <span className="quote-hero-attribution-inner" data-hero-reveal>— <span data-hero-quote-source>{introQuotes[0].source} · {introQuotes[0].author}</span></span>
-              </footer>
-            </blockquote>
-          </div>
 
-          <figure className="quote-cover hero-line" aria-label="当前句子的来源封面位置">
-            <div className="quote-cover-art" data-hero-reveal>
-              <span className="quote-cover-medium" data-cover-medium>{introQuotes[0].medium}</span>
-              <span className="quote-cover-index" aria-hidden="true">M—L / 001</span>
-              <strong data-cover-title>{introQuotes[0].coverTitle}</strong>
-              <span className="quote-cover-meta" data-cover-meta>{introQuotes[0].coverMeta}</span>
-              <i aria-hidden="true" />
-            </div>
-            <figcaption className="quote-cover-caption" data-hero-reveal>source object · cover archive</figcaption>
-          </figure>
-
-          <div className="quote-hero-controls hero-line" aria-label="句子轮播控制">
-            <div data-hero-reveal>
-              <button type="button" aria-label="上一句话" onClick={() => changeHeroQuoteRef.current(-1)}>←</button>
-              <button type="button" aria-label="下一句话" onClick={() => changeHeroQuoteRef.current(1)}>→</button>
-              <button type="button" data-hero-pause aria-label="暂停自动轮换句子" aria-pressed="false" onClick={() => toggleHeroAutoplayRef.current()}>暂停</button>
-            </div>
-          </div>
-
-          <div className="quote-hero-progress hero-line">
-            <div data-hero-reveal>
-              <span data-hero-quote-counter>01 / 03</span>
-              <i><b className="quote-hero-progress-fill" /></i>
-              <span>A SMALL INDEX OF BELIEF</span>
-            </div>
-          </div>
-
-          <a className="quote-hero-scroll hero-line" data-magnetic href="#collections">
-            <span data-hero-reveal>继续浏览 <i aria-hidden="true">↓</i></span>
-          </a>
-        </section>
-
-        <section className="collection-index" id="collections" aria-labelledby="collections-title" data-reveal>
-          <div className="section-heading index-heading">
-            <p className="section-number" data-reveal-item>I</p>
-            <div data-reveal-item>
-              <p className="section-kicker">A personal cabinet</p>
-              <h2 id="collections-title">四份私人收藏</h2>
-            </div>
-            <p className="heading-note" data-reveal-item>它们不是标签，只是认识一个人的几条小路。</p>
-          </div>
-
-          <div className="collection-grid">
-            {collections.map((item) => (
-              <a className="collection-card" data-magnetic data-reveal-item href={`#${item.id}`} key={item.id}>
-                <span className="card-index">{item.index} / 04</span>
-                <span className="card-arrow" aria-hidden="true">↗</span>
-                <h3>{item.title}</h3>
-                <span className="card-en">{item.en}</span>
-                <p>{item.description}</p>
-                <span className="card-sweep" aria-hidden="true" />
-              </a>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <div className="motion-marquee" aria-hidden="true">
-        <div className="marquee-track" data-marquee-track>
-          <span>MUSIC</span><i>✦</i><span>FILM</span><i>✦</i><span>WORDS</span><i>✦</i><span>NOTES</span><i>✦</i>
-          <span>MUSIC</span><i>✦</i><span>FILM</span><i>✦</i><span>WORDS</span><i>✦</i><span>NOTES</span>
-        </div>
-      </div>
-
-      <div className="page-frame">
-        <section className="chapter music-chapter" id="music" aria-labelledby="music-title" data-reveal>
-          <div className="chapter-intro">
-            <p className="section-number" data-reveal-item>II</p>
-            <p className="section-kicker" data-reveal-item>Sounds I return to</p>
-            <h2 id="music-title" data-reveal-item>耳边的风景</h2>
-            <p className="chapter-description" data-reveal-item>我不太按流派整理音乐，更愿意记住它出现时的天气、时间，以及那一刻的自己。</p>
-          </div>
-
-          <div className="sound-list" aria-label="三个音乐气氛片段">
-            {soundscapes.map((item) => (
-              <article className="sound-row" data-reveal-item key={item.number}>
-                <span className="sound-number">{item.number}</span>
-                <div><h3>{item.title}</h3><p>{item.style}</p></div>
-                <p className="sound-note">{item.note}</p>
-                <span className="play-mark" aria-hidden="true"><i /></span>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="chapter film-chapter" id="films" aria-labelledby="films-title" data-reveal>
-          <div className="section-heading">
-            <p className="section-number" data-reveal-item>III</p>
-            <div data-reveal-item><p className="section-kicker">Frames worth keeping</p><h2 id="films-title">我会停下来的画面</h2></div>
-            <p className="heading-note" data-reveal-item>比情节更难忘的，常常是某个沉默的瞬间。</p>
-          </div>
-
-          <div className="film-grid">
-            {filmNotes.map((film) => (
-              <article className="film-card" data-tilt data-reveal-item key={film.number}>
-                <div className={`film-window film-window--${film.number}`} aria-hidden="true">
-                  <span>{film.number}</span><i />
+              <div className="quote-tools clip-line">
+                <div data-home-reveal data-home-return>
+                  <button type="button" aria-label="上一句话" onClick={() => changeQuoteRef.current(-1)}>←</button>
+                  <button type="button" aria-label="下一句话" onClick={() => changeQuoteRef.current(1)}>→</button>
+                  <button type="button" data-quote-pause aria-label="暂停自动轮换句子" aria-pressed="false" onClick={() => toggleAutoplayRef.current()}>暂停</button>
+                  <span data-quote-counter>01 / 03</span>
+                  <i className="quote-progress"><b className="quote-progress-fill" /></i>
                 </div>
-                <p className="film-number">Frame {film.number}</p>
-                <h3>{film.title}</h3>
-                <p>{film.note}</p>
-              </article>
-            ))}
+              </div>
+            </div>
+
+            <figure className="quote-cover clip-line">
+              <div className="quote-cover-art" data-home-reveal data-home-return>
+                <span className="quote-cover-medium" data-cover-medium>{featuredQuotes[0].medium}</span>
+                <span className="quote-cover-index">M—L / 001</span>
+                <strong data-cover-title>{featuredQuotes[0].coverTitle}</strong>
+                <span className="quote-cover-meta" data-cover-meta>{featuredQuotes[0].coverMeta}</span>
+                <i aria-hidden="true" />
+              </div>
+              <figcaption className="quote-cover-caption" data-home-reveal>source object · cover archive</figcaption>
+            </figure>
           </div>
+
+          <nav className="portal-nav" aria-label="浏览个人档案">
+            {portals.map((portal) => (
+              <button
+                className={`portal portal--${portal.id}`}
+                data-home-reveal
+                data-home-return
+                data-portal={portal.id}
+                key={portal.id}
+                type="button"
+                onClick={() => openPanelRef.current(portal.id)}
+              >
+                <span>{portal.index}</span>
+                <span><strong>{portal.title}</strong><small>{portal.subtitle}</small></span>
+                <i aria-hidden="true">↗</i>
+              </button>
+            ))}
+          </nav>
         </section>
       </div>
 
-      <section className="chapter words-chapter" id="words" aria-labelledby="words-title" data-reveal>
-        <div className="words-inner">
-          <div className="words-aside">
-            <p className="section-number" data-reveal-item>IV</p>
-            <p className="section-kicker" data-reveal-item>Words with an afterglow</p>
-            <h2 id="words-title" data-reveal-item>舍不得忘记的文字</h2>
-            <p data-reveal-item>先收好，不急着解释。也许某一天，它会替当时的我说话。</p>
-          </div>
-
-          <div className="quote-stack">
-            {quotes.map((quote, index) => (
-              <blockquote data-reveal-item key={quote}>
-                <span className="quote-mark" aria-hidden="true">“</span>
-                <p>{quote}</p>
-                <span className="quote-index">0{index + 1}</span>
-              </blockquote>
-            ))}
+      <section className="experience-panel panel-story" data-panel="story" aria-hidden="true">
+        <PanelHeader index="01" title="STORY" onClose={() => closePanelRef.current()} />
+        <div className="panel-body story-body">
+          <aside data-panel-reveal><span>01 / 04</span><p>LIFE NOTES<br />IN CHRONOLOGICAL ORDER</p></aside>
+          <div className="story-content">
+            <p className="panel-kicker" data-panel-reveal>PERSONAL HISTORY / UNWRITTEN</p>
+            <h2 data-panel-reveal>Story</h2>
+            <div className="story-placeholder" data-panel-reveal>
+              <span>CHAPTER 00</span><i /><p>人生经历将在这里按时间展开。</p><small>CONTENT TO BE WRITTEN</small>
+            </div>
           </div>
         </div>
       </section>
 
-      <div className="page-frame">
-        <section className="chapter thoughts-chapter" id="thoughts" aria-labelledby="thoughts-title" data-reveal>
-          <div className="section-heading">
-            <p className="section-number" data-reveal-item>V</p>
-            <div data-reveal-item><p className="section-kicker">Notes in progress</p><h2 id="thoughts-title">还在生长的想法</h2></div>
-            <p className="heading-note" data-reveal-item>不是观点的展柜，只是一册允许反复修改的札记。</p>
+      <section className="experience-panel panel-favorites" data-panel="favorites" aria-hidden="true">
+        <PanelHeader index="02" title="FAVORITES" onClose={() => closePanelRef.current()} />
+        <div className="panel-body favorites-body">
+          <aside data-panel-reveal><span>02 / 04</span><p>THINGS I RETURN TO<br />AGAIN AND AGAIN</p></aside>
+          <div className="favorites-content">
+            <p className="panel-kicker" data-panel-reveal>PERSONAL SELECTION / INDEX</p>
+            <h2 data-panel-reveal>Favorites</h2>
+            <div className="favorite-categories">
+              {[
+                ["01", "MUSIC", "歌曲与专辑"],
+                ["02", "FILMS", "电影与镜头"],
+                ["03", "BOOKS", "书籍与作者"],
+              ].map(([index, title, subtitle]) => (
+                <article data-panel-reveal key={title}>
+                  <span>{index}</span><strong>{title}</strong><small>{subtitle}</small><i>↗</i>
+                </article>
+              ))}
+            </div>
           </div>
+        </div>
+      </section>
 
-          <div className="notes-grid">
-            {notes.map((note) => (
-              <article className="note-card" data-tilt data-reveal-item key={note.number}>
-                <div className="note-meta"><span>Note {note.number}</span><span>2026.07</span></div>
-                <h3>{note.title}</h3>
-                <p>{note.body}</p>
-                <span className="note-orbit" aria-hidden="true" />
-              </article>
-            ))}
+      <section className="experience-panel panel-pictures" data-panel="pictures" aria-hidden="true">
+        <PanelHeader index="03" title="PICTURES" onClose={() => closePanelRef.current()} />
+        <div className="panel-body pictures-body">
+          <aside data-panel-reveal><span>03 / 04</span><p>FRAMES SAVED<br />WITHOUT EXPLANATION</p></aside>
+          <div className="pictures-content">
+            <p className="panel-kicker" data-panel-reveal>VISUAL ARCHIVE / EMPTY</p>
+            <h2 data-panel-reveal>Pictures</h2>
+            <div className="picture-grid" aria-label="未来的图片位置">
+              {["001", "002", "003", "004", "005", "006"].map((index) => (
+                <div data-panel-reveal key={index}><span>{index}</span><i /></div>
+              ))}
+            </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <footer>
-          <a className="footer-mark" data-magnetic href="#home" aria-label="回到顶部">M</a>
-          <p>© 2026 Morten-Liu</p>
-          <p>Collected slowly, kept with care.</p>
-          <a data-magnetic href="#home">回到页首 ↑</a>
-        </footer>
-      </div>
+      <section className="experience-panel panel-thinking" data-panel="thinking" aria-hidden="true">
+        <PanelHeader index="04" title="THINKING" onClose={() => closePanelRef.current()} />
+        <div className="panel-body thinking-body">
+          <aside data-panel-reveal><span>04 / 04</span><p>NOTES THAT MAY<br />CHANGE LATER</p></aside>
+          <div className="thinking-content">
+            <p className="panel-kicker" data-panel-reveal>NOTES IN PROGRESS / 2026</p>
+            <h2 data-panel-reveal>Thinking</h2>
+            <div className="thought-grid">
+              <article data-panel-reveal><span>001</span><h3>关于观察</h3><p>先记录发生过什么，再决定如何理解它。</p></article>
+              <article data-panel-reveal><span>002</span><h3>下一篇</h3><p>尚未写下。</p></article>
+              <article data-panel-reveal><span>003</span><h3>下一篇</h3><p>尚未写下。</p></article>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
+  );
+}
+
+function PanelHeader({ index, title, onClose }: { index: string; title: string; onClose: () => void }) {
+  return (
+    <header className="panel-header">
+      <a href="#home" aria-label="Morten Liu 主页" onClick={(event) => { event.preventDefault(); onClose(); }}>
+        <span className="panel-monogram">M</span><span>MORTEN—LIU</span>
+      </a>
+      <p>{index} / 04 · {title}</p>
+      <button type="button" data-panel-close onClick={onClose}>关闭 <span aria-hidden="true">×</span></button>
+    </header>
   );
 }
