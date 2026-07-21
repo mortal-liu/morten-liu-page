@@ -89,7 +89,7 @@ a {
   color: var(--paper);
   pointer-events: auto;
   isolation: isolate;
-  animation: intro-fallback 0.01s 4s forwards;
+  animation: intro-fallback 0.01s 16s forwards;
 }
 
 .intro-panel {
@@ -113,38 +113,71 @@ a {
   position: relative;
   z-index: 2;
   display: grid;
-  justify-items: center;
-  gap: 27px;
-  width: min(92vw, 1180px);
-  perspective: 800px;
+  justify-items: start;
+  gap: clamp(30px, 4.2vh, 48px);
+  width: min(86vw, 1260px);
+  margin-top: -2vh;
 }
 
-.intro-word {
+.intro-kicker {
   display: flex;
-  justify-content: center;
-  width: 100%;
-  font: 400 clamp(74px, 14.2vw, 220px) / 0.74 Georgia, "Times New Roman", serif;
-  letter-spacing: -0.075em;
+  align-items: center;
+  gap: 14px;
 }
 
-.intro-letter-mask,
-.intro-subline {
+.intro-red-dot {
+  width: 13px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--clay-soft);
+  box-shadow: 0 0 0 6px rgba(180, 103, 81, 0.1);
+  transform-origin: center;
+}
+
+.intro-kicker-mask,
+.intro-attribution-mask {
   display: block;
   overflow: hidden;
 }
 
-.intro-letter {
+.intro-kicker-inner {
   display: block;
-  transform-origin: 50% 100%;
-  will-change: transform;
+  color: rgba(243, 238, 226, 0.62);
+  font: 600 9px/1 var(--sans);
+  letter-spacing: 0.34em;
 }
 
-.intro-subline-inner {
+.intro-quote {
+  display: grid;
+  gap: clamp(28px, 4vh, 46px);
+  width: 100%;
+  min-height: clamp(250px, 42vh, 430px);
+  margin: 0;
+  align-content: center;
+}
+
+.intro-quote-text {
+  max-width: 18ch;
+  margin: 0;
+  color: var(--paper);
+  font: 400 clamp(43px, 6.1vw, 92px) / 1.09 Georgia, "Times New Roman", "Songti SC", serif;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+  will-change: transform, opacity;
+}
+
+.intro-quote[lang="en"] .intro-quote-text {
+  max-width: 20ch;
+  font-size: clamp(42px, 5.5vw, 84px);
+  line-height: 1.03;
+}
+
+.intro-attribution-inner {
   display: block;
-  color: rgba(243, 238, 226, 0.68);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.42em;
+  color: rgba(243, 238, 226, 0.58);
+  font: 500 11px/1.4 var(--sans);
+  letter-spacing: 0.16em;
+  will-change: transform, opacity;
 }
 
 .intro-meta {
@@ -182,6 +215,43 @@ a {
   transform-origin: left;
 }
 
+.intro-controls {
+  position: absolute;
+  z-index: 4;
+  left: 52px;
+  bottom: 78px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.intro-controls button {
+  display: grid;
+  min-width: 35px;
+  height: 35px;
+  padding: 0 10px;
+  place-items: center;
+  border: 1px solid rgba(243, 238, 226, 0.22);
+  border-radius: 999px;
+  color: rgba(243, 238, 226, 0.76);
+  background: transparent;
+  font: 500 10px/1 var(--sans);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: color 220ms ease, border-color 220ms ease, background-color 220ms ease;
+}
+
+.intro-controls button:last-child {
+  min-width: 58px;
+}
+
+.intro-controls button:hover,
+.intro-controls button:focus-visible {
+  border-color: var(--clay-soft);
+  color: var(--paper);
+  background: rgba(243, 238, 226, 0.07);
+}
+
 .intro-skip {
   position: absolute;
   z-index: 4;
@@ -194,6 +264,12 @@ a {
   font: 500 9px/1 var(--sans);
   letter-spacing: 0.18em;
   cursor: pointer;
+}
+
+.intro-skip span {
+  margin-left: 7px;
+  color: var(--clay-soft);
+  font-size: 13px;
 }
 
 .intro-skip::after {
@@ -1379,8 +1455,40 @@ footer a {
     padding-inline: 21px;
   }
 
-  .intro-word {
-    font-size: 22vw;
+  .intro-content {
+    width: calc(100vw - 42px);
+    gap: 24px;
+    margin-top: -5vh;
+  }
+
+  .intro-kicker {
+    gap: 11px;
+  }
+
+  .intro-red-dot {
+    width: 10px;
+  }
+
+  .intro-kicker-inner {
+    font-size: 8px;
+    letter-spacing: 0.23em;
+  }
+
+  .intro-quote {
+    gap: 25px;
+    min-height: 350px;
+  }
+
+  .intro-quote-text,
+  .intro-quote[lang="en"] .intro-quote-text {
+    max-width: 100%;
+    font-size: clamp(38px, 11.2vw, 56px);
+    line-height: 1.12;
+  }
+
+  .intro-attribution-inner {
+    font-size: 9px;
+    letter-spacing: 0.11em;
   }
 
   .intro-meta {
@@ -1397,6 +1505,16 @@ footer a {
   .intro-skip {
     top: 24px;
     right: 22px;
+  }
+
+  .intro-controls {
+    left: 22px;
+    bottom: 67px;
+  }
+
+  .intro-controls button {
+    min-width: 32px;
+    height: 32px;
   }
 
   .topbar {

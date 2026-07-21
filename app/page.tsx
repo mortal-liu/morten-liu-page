@@ -4,6 +4,27 @@ import { useLayoutEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+const introQuotes = [
+  {
+    text: "如果你也来自小镇，成功从来不靠等待",
+    source: "《你给的恨》",
+    author: "Asen艾志恒",
+    lang: "zh-CN",
+  },
+  {
+    text: "从来如此，便对么？",
+    source: "《狂人日记》",
+    author: "鲁迅",
+    lang: "zh-CN",
+  },
+  {
+    text: "Who looks outside, dreams; who looks inside, awake.",
+    source: "",
+    author: "荣格",
+    lang: "en",
+  },
+];
+
 const collections = [
   {
     index: "01",
@@ -74,6 +95,8 @@ const notes = [
 export default function Home() {
   const pageRef = useRef<HTMLElement>(null);
   const skipIntroRef = useRef<() => void>(() => undefined);
+  const changeIntroQuoteRef = useRef<(direction: number) => void>(() => undefined);
+  const toggleIntroAutoplayRef = useRef<() => void>(() => undefined);
 
   useLayoutEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -82,13 +105,54 @@ export default function Home() {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const intro = page.querySelector<HTMLElement>("[data-intro]");
-    const count = page.querySelector<HTMLElement>("[data-intro-count]");
-    const counter = { value: 0 };
-    let introTimeline: gsap.core.Timeline | null = null;
+    const quoteText = page.querySelector<HTMLElement>("[data-intro-quote-text]");
+    const quoteSource = page.querySelector<HTMLElement>("[data-intro-quote-source]");
+    const quoteCounter = page.querySelector<HTMLElement>("[data-intro-quote-counter]");
+    const pauseButton = page.querySelector<HTMLButtonElement>("[data-intro-pause]");
+    const quoteStage = page.querySelector<HTMLElement>("[data-intro-quote-stage]");
+    let entranceTimeline: gsap.core.Timeline | null = null;
+    let exitTimeline: gsap.core.Timeline | null = null;
+    let quoteTimeline: gsap.core.Timeline | null = null;
+    let progressTween: gsap.core.Tween | null = null;
+    let quoteIndex = 0;
+    let autoplayPaused = false;
+    let isExiting = false;
 
     const releasePage = () => {
       document.body.classList.remove("intro-lock");
       if (intro) gsap.set(intro, { autoAlpha: 0, pointerEvents: "none" });
+      ScrollTrigger.refresh();
+    };
+
+    const writeQuote = (index: number) => {
+      const quote = introQuotes[index];
+      if (quoteText) {
+        quoteText.textContent = quote.text;
+        quoteText.closest("blockquote")?.setAttribute("lang", quote.lang);
+      }
+      if (quoteSource) {
+        quoteSource.textContent = quote.source ? `${quote.source} · ${quote.author}` : quote.author;
+      }
+      if (quoteCounter) quoteCounter.textContent = `${String(index + 1).padStart(2, "0")} / ${String(introQuotes.length).padStart(2, "0")}`;
+    };
+
+    const scheduleAutoplay = () => {
+      progressTween?.kill();
+      gsap.set(".intro-rule-fill", { scaleX: 0 });
+      if (autoplayPaused || isExiting) return;
+      progressTween = gsap.to(".intro-rule-fill", {
+        scaleX: 1,
+        duration: 5.8,
+        ease: "none",
+        onComplete: () => changeIntroQuoteRef.current(1),
+      });
+    };
+
+    const setAutoplayButton = () => {
+      if (!pauseButton) return;
+      pauseButton.textContent = autoplayPaused ? "继续" : "暂停";
+      pauseButton.setAttribute("aria-label", autoplayPaused ? "继续自动轮换句子" : "暂停自动轮换句子");
+      pauseButton.setAttribute("aria-pressed", String(autoplayPaused));
     };
 
     if (reducedMotion) {
@@ -96,56 +160,99 @@ export default function Home() {
       gsap.set("[data-hero-reveal]", { yPercent: 0 });
     } else {
       document.body.classList.add("intro-lock");
-      introTimeline = gsap
-        .timeline({ defaults: { ease: "power4.inOut" }, onComplete: releasePage })
-        .set(intro, { autoAlpha: 1, animation: "none" })
-        .fromTo(".intro-rule-fill", { scaleX: 0 }, { scaleX: 1, duration: 1.45, ease: "power2.inOut" }, 0)
-        .to(
-          counter,
-          {
-            value: 100,
-            duration: 1.45,
-            ease: "power2.inOut",
-            onUpdate: () => {
-              if (count) count.textContent = String(Math.round(counter.value)).padStart(3, "0");
-            },
-          },
-          0,
-        )
-        .fromTo(
-          ".intro-letter",
-          { yPercent: 125, rotateX: -45 },
-          { yPercent: 0, rotateX: 0, duration: 0.85, stagger: 0.055 },
-          0.12,
-        )
-        .fromTo(".intro-subline-inner", { yPercent: 110 }, { yPercent: 0, duration: 0.72 }, 0.48)
-        .to(".intro-letter", { yPercent: -125, duration: 0.68, stagger: 0.025 }, 1.48)
-        .to(".intro-subline-inner", { yPercent: -115, duration: 0.54 }, 1.49)
-        .to(".intro-meta, .intro-skip", { autoAlpha: 0, duration: 0.35 }, 1.48)
-        .to(".intro-panel--top", { yPercent: -101, duration: 0.95 }, 1.63)
-        .to(".intro-panel--bottom", { yPercent: 101, duration: 0.95 }, 1.63)
-        .fromTo(
-          "[data-hero-reveal]",
-          { yPercent: 115 },
-          { yPercent: 0, duration: 1.05, stagger: 0.075 },
-          1.76,
-        )
-        .fromTo(
-          ".portrait-frame",
-          { clipPath: "inset(100% 0 0 0)", scale: 0.94 },
-          { clipPath: "inset(0% 0 0 0)", scale: 1, duration: 1.08 },
-          1.82,
-        )
-        .fromTo(".topbar", { autoAlpha: 0, y: -18 }, { autoAlpha: 1, y: 0, duration: 0.72 }, 1.98)
-        .fromTo(".hero-orbit", { scale: 0, rotate: -35 }, { scale: 1, rotate: 0, duration: 0.9 }, 2.05);
+      writeQuote(quoteIndex);
 
-      skipIntroRef.current = () => introTimeline?.progress(1);
+      changeIntroQuoteRef.current = (direction: number) => {
+        if (isExiting || quoteTimeline?.isActive()) return;
+        progressTween?.kill();
+        const nextIndex = (quoteIndex + direction + introQuotes.length) % introQuotes.length;
+        const leaveY = direction >= 0 ? -46 : 46;
+        const enterY = direction >= 0 ? 56 : -56;
+
+        quoteTimeline = gsap
+          .timeline({ defaults: { ease: "power3.inOut" }, onComplete: scheduleAutoplay })
+          .to(".intro-quote-text, .intro-attribution-inner", {
+            y: leaveY,
+            autoAlpha: 0,
+            duration: 0.42,
+            stagger: 0.035,
+          })
+          .add(() => {
+            quoteIndex = nextIndex;
+            writeQuote(quoteIndex);
+          })
+          .set(".intro-quote-text, .intro-attribution-inner", { y: enterY })
+          .to(".intro-quote-text, .intro-attribution-inner", {
+            y: 0,
+            autoAlpha: 1,
+            duration: 0.72,
+            stagger: 0.05,
+            ease: "power4.out",
+          });
+      };
+
+      toggleIntroAutoplayRef.current = () => {
+        autoplayPaused = !autoplayPaused;
+        setAutoplayButton();
+        if (autoplayPaused) {
+          progressTween?.pause();
+        } else if (progressTween) {
+          progressTween.resume();
+        } else {
+          scheduleAutoplay();
+        }
+      };
+
+      const exitIntro = () => {
+        if (isExiting) return;
+        isExiting = true;
+        progressTween?.kill();
+        quoteTimeline?.kill();
+        exitTimeline = gsap
+          .timeline({ defaults: { ease: "power4.inOut" }, onComplete: releasePage })
+          .to(".intro-content, .intro-controls, .intro-meta", { autoAlpha: 0, y: -22, duration: 0.48 })
+          .to(".intro-panel--top", { yPercent: -101, duration: 0.94 }, 0.28)
+          .to(".intro-panel--bottom", { yPercent: 101, duration: 0.94 }, 0.28)
+          .fromTo("[data-hero-reveal]", { yPercent: 115 }, { yPercent: 0, duration: 1.05, stagger: 0.075 }, 0.42)
+          .fromTo(
+            ".portrait-frame",
+            { clipPath: "inset(100% 0 0 0)", scale: 0.94 },
+            { clipPath: "inset(0% 0 0 0)", scale: 1, duration: 1.08 },
+            0.48,
+          )
+          .fromTo(".topbar", { autoAlpha: 0, y: -18 }, { autoAlpha: 1, y: 0, duration: 0.72 }, 0.64)
+          .fromTo(".hero-orbit", { scale: 0, rotate: -35 }, { scale: 1, rotate: 0, duration: 0.9 }, 0.71);
+      };
+
+      entranceTimeline = gsap
+        .timeline({ defaults: { ease: "power4.out" }, onComplete: scheduleAutoplay })
+        .set(intro, { autoAlpha: 1, animation: "none" })
+        .fromTo(".intro-red-dot", { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.72 }, 0.08)
+        .fromTo(".intro-kicker-inner", { yPercent: 120 }, { yPercent: 0, duration: 0.68 }, 0.18)
+        .fromTo(".intro-quote-text", { y: 70, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.05 }, 0.28)
+        .fromTo(".intro-attribution-inner", { yPercent: 120 }, { yPercent: 0, duration: 0.74 }, 0.72)
+        .fromTo(".intro-controls, .intro-meta, .intro-skip", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.58 }, 0.84);
+
+      skipIntroRef.current = exitIntro;
     }
 
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") skipIntroRef.current();
+    const onIntroKeydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" || event.key === "Enter") skipIntroRef.current();
+      if (event.key === "ArrowLeft") changeIntroQuoteRef.current(-1);
+      if (event.key === "ArrowRight") changeIntroQuoteRef.current(1);
+      if (event.key === " " && intro && gsap.getProperty(intro, "visibility") !== "hidden") {
+        event.preventDefault();
+        toggleIntroAutoplayRef.current();
+      }
     };
-    document.addEventListener("keydown", onEscape);
+    document.addEventListener("keydown", onIntroKeydown);
+
+    const pauseOnHover = () => progressTween?.pause();
+    const resumeAfterHover = () => {
+      if (!autoplayPaused) progressTween?.resume();
+    };
+    quoteStage?.addEventListener("pointerenter", pauseOnHover);
+    quoteStage?.addEventListener("pointerleave", resumeAfterHover);
 
     const motion = gsap.matchMedia(page);
     motion.add(
@@ -282,10 +389,15 @@ export default function Home() {
     }
 
     return () => {
-      introTimeline?.kill();
+      entranceTimeline?.kill();
+      exitTimeline?.kill();
+      quoteTimeline?.kill();
+      progressTween?.kill();
       motion.revert();
       cleanups.forEach((cleanup) => cleanup());
-      document.removeEventListener("keydown", onEscape);
+      document.removeEventListener("keydown", onIntroKeydown);
+      quoteStage?.removeEventListener("pointerenter", pauseOnHover);
+      quoteStage?.removeEventListener("pointerleave", resumeAfterHover);
       document.body.classList.remove("intro-lock");
     };
   }, []);
@@ -296,22 +408,29 @@ export default function Home() {
         <div className="intro-panel intro-panel--top" />
         <div className="intro-panel intro-panel--bottom" />
         <div className="intro-content">
-          <div className="intro-word" aria-label="Morten Liu">
-            {"MORTEN".split("").map((letter, index) => (
-              <span className="intro-letter-mask" key={`${letter}-${index}`}>
-                <span className="intro-letter">{letter}</span>
-              </span>
-            ))}
+          <div className="intro-kicker">
+            <span className="intro-red-dot" aria-hidden="true" />
+            <span className="intro-kicker-mask"><span className="intro-kicker-inner">MORTEN—LIU · SELECTED WORDS</span></span>
           </div>
-          <div className="intro-subline"><span className="intro-subline-inner">LIU · PERSONAL ARCHIVE</span></div>
+          <blockquote className="intro-quote" data-intro-quote-stage lang={introQuotes[0].lang}>
+            <p className="intro-quote-text" data-intro-quote-text>{introQuotes[0].text}</p>
+            <footer className="intro-attribution-mask">
+              <span className="intro-attribution-inner">— <span data-intro-quote-source>{introQuotes[0].source} · {introQuotes[0].author}</span></span>
+            </footer>
+          </blockquote>
         </div>
         <div className="intro-meta">
-          <span data-intro-count>000</span>
+          <span data-intro-quote-counter>01 / 03</span>
           <div className="intro-rule"><span className="intro-rule-fill" /></div>
-          <span>LOADING A QUIET WORLD</span>
+          <span>WORDS I KEEP CLOSE</span>
+        </div>
+        <div className="intro-controls" aria-label="句子轮播控制">
+          <button type="button" aria-label="上一句话" onClick={() => changeIntroQuoteRef.current(-1)}>←</button>
+          <button type="button" aria-label="下一句话" onClick={() => changeIntroQuoteRef.current(1)}>→</button>
+          <button type="button" data-intro-pause aria-label="暂停自动轮换句子" aria-pressed="false" onClick={() => toggleIntroAutoplayRef.current()}>暂停</button>
         </div>
         <button className="intro-skip" type="button" onClick={() => skipIntroRef.current()}>
-          跳过 / ESC
+          进入主页 <span aria-hidden="true">↘</span>
         </button>
       </div>
 
