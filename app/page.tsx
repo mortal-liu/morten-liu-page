@@ -66,7 +66,6 @@ export default function Home() {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const intro = page.querySelector<HTMLElement>("[data-intro]");
-    const introCount = page.querySelector<HTMLElement>("[data-intro-count]");
     const homeScreen = page.querySelector<HTMLElement>("[data-home-screen]");
     const transition = page.querySelector<HTMLElement>("[data-page-transition]");
     const transitionLabel = page.querySelector<HTMLElement>("[data-transition-label]");
@@ -90,7 +89,6 @@ export default function Home() {
     let activePanel: PanelId | null = null;
     let introIsExiting = false;
     let panelIsTransitioning = false;
-    const counter = { value: 0 };
 
     document.body.classList.add("experience-lock");
 
@@ -110,14 +108,8 @@ export default function Home() {
 
     const scheduleQuote = () => {
       quoteProgress?.kill();
-      gsap.set(".quote-progress-fill", { scaleX: 0 });
       if (autoplayPaused || activePanel || reducedMotion) return;
-      quoteProgress = gsap.to(".quote-progress-fill", {
-        scaleX: 1,
-        duration: 6,
-        ease: "none",
-        onComplete: () => changeQuoteRef.current(1),
-      });
+      quoteProgress = gsap.delayedCall(6, () => changeQuoteRef.current(1));
     };
 
     changeQuoteRef.current = (direction: number) => {
@@ -205,7 +197,7 @@ export default function Home() {
         .to(".transition-branch", { scaleX: 1, duration: 0.72, stagger: 0.035, ease: "power3.out" }, 0)
         .to(".transition-leaf", { scale: 1, rotate: 0, autoAlpha: 1, duration: 0.48, stagger: 0.025, ease: "back.out(1.7)" }, 0.16)
         .to(".page-transition-canopy", { clipPath: `circle(155% at ${originX}px ${originY}px)`, duration: 0.94 }, 0.08)
-        .fromTo(transitionLabel, { yPercent: 120, rotateX: -35 }, { yPercent: 0, rotateX: 0, duration: 0.72 }, 0.34)
+        .fromTo(transitionLabel, { yPercent: 120, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.72 }, 0.34)
         .add(() => {
           gsap.set(homeScreen, { autoAlpha: 0, pointerEvents: "none" });
           gsap.set(target, { autoAlpha: 1, pointerEvents: "auto" });
@@ -214,7 +206,7 @@ export default function Home() {
         }, 0.88)
         .to(transitionLabel, { yPercent: -120, duration: 0.42 }, 0.92)
         .to(".transition-leaf", { y: -26, rotate: 28, autoAlpha: 0, duration: 0.52, stagger: 0.018 }, 0.94)
-        .to(".transition-branch", { scaleX: 0, transformOrigin: "right center", duration: 0.54, stagger: 0.018 }, 0.98)
+        .to(".transition-branch", { scaleX: 0, transformOrigin: "left center", duration: 0.54, stagger: 0.018 }, 0.98)
         .to(".page-transition-canopy", { clipPath: "circle(0% at 50% 0%)", duration: 0.86 }, 1.02)
         .fromTo(target.querySelectorAll("[data-panel-reveal]"), { y: 42, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.06, ease: "power3.out" }, 1.08)
         .set(transition, { autoAlpha: 0, pointerEvents: "none" });
@@ -272,7 +264,7 @@ export default function Home() {
         }, 0.84)
         .to(transitionLabel, { yPercent: -120, duration: 0.4 }, 0.88)
         .to(".transition-leaf", { y: 30, rotate: -28, autoAlpha: 0, duration: 0.48, stagger: 0.016 }, 0.9)
-        .to(".transition-branch", { scaleX: 0, transformOrigin: "right center", duration: 0.5, stagger: 0.016 }, 0.94)
+        .to(".transition-branch", { scaleX: 0, transformOrigin: "left center", duration: 0.5, stagger: 0.016 }, 0.94)
         .to(".page-transition-canopy", { clipPath: "circle(0% at 50% 100%)", duration: 0.82 }, 0.98)
         .fromTo("[data-home-return]", { y: 22, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.045, ease: "power3.out" }, 1.02)
         .set(transition, { autoAlpha: 0, pointerEvents: "none" });
@@ -297,45 +289,38 @@ export default function Home() {
         introIsExiting = true;
         introTimeline?.kill();
         introExitTimeline = gsap
-          .timeline({ defaults: { ease: "power4.inOut" }, onComplete: releaseIntro })
-          .to(".intro-leaf", { y: -34, x: "random(-28, 28)", rotate: "random(-45, 45)", autoAlpha: 0, duration: 0.58, stagger: 0.018, ease: "power2.in" }, 0)
-          .to(".intro-tree", { scale: 1.22, autoAlpha: 0, duration: 0.62 }, 0.08)
-          .to(".intro-word-wrap", { scale: 1.08, filter: "blur(10px)", autoAlpha: 0, duration: 0.46 }, 0)
-          .to(".intro-tech, .intro-meta, .intro-skip", { autoAlpha: 0, duration: 0.25 }, 0)
-          .fromTo(".intro-flash", { scaleX: 0 }, { scaleX: 1, duration: 0.38, ease: "power4.in" }, 0.16)
-          .to(".intro-panel--top", { yPercent: -101, duration: 0.92 }, 0.42)
-          .to(".intro-panel--bottom", { yPercent: 101, duration: 0.92 }, 0.42)
-          .to(".intro-flash", { scaleX: 0, transformOrigin: "right", duration: 0.6 }, 0.45)
-          .fromTo("[data-home-reveal]", { yPercent: 112, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.92, stagger: 0.055 }, 0.58);
+          .timeline({ defaults: { ease: "power3.inOut" }, onComplete: releaseIntro })
+          .to(".intro-content, .intro-skip, .intro-halo", { y: -14, autoAlpha: 0, duration: 0.5 }, 0)
+          .to(".intro-tree", { rotate: -2.2, x: "+=18", duration: 0.62, ease: "sine.inOut" }, 0)
+          .to(".intro-leaf", {
+            x: () => gsap.utils.random(window.innerWidth * 0.28, window.innerWidth * 0.78),
+            y: () => gsap.utils.random(-window.innerHeight * 0.18, window.innerHeight * 0.16),
+            rotate: () => gsap.utils.random(110, 330),
+            autoAlpha: 0,
+            duration: 1.12,
+            stagger: 0.026,
+            ease: "power2.in",
+          }, 0.06)
+          .to(".intro-branch", { scaleX: 0.72, autoAlpha: 0, duration: 0.72, stagger: 0.025 }, 0.16)
+          .to(".intro-trunk", { scaleY: 0.18, autoAlpha: 0, duration: 0.78, transformOrigin: "50% 100%" }, 0.2)
+          .fromTo("[data-home-reveal]", { yPercent: 82, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.88, stagger: 0.05 }, 0.32)
+          .to(intro, { autoAlpha: 0, duration: 0.72, ease: "sine.inOut" }, 0.48);
       };
 
       introTimeline = gsap
         .timeline({ defaults: { ease: "power4.out" }, onComplete: exitIntro })
         .set(intro, { autoAlpha: 1, animation: "none" })
-        .fromTo(".intro-grid-line", { scaleX: 0 }, { scaleX: 1, duration: 0.95, stagger: 0.04 }, 0)
         .fromTo(".intro-halo-ring", { scale: 0.18, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 1.1, stagger: 0.08 }, 0.08)
         .fromTo(".intro-signal-dot", { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.52 }, 0.18)
         .fromTo(".intro-trunk", { scaleY: 0 }, { scaleY: 1, duration: 0.82, ease: "power3.inOut" }, 0.08)
         .fromTo(".intro-branch", { scaleX: 0 }, { scaleX: 1, duration: 0.62, stagger: 0.055, ease: "power3.out" }, 0.34)
         .fromTo(".intro-leaf", { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.48, stagger: 0.028, ease: "back.out(1.8)" }, 0.54)
-        .fromTo(".intro-tech", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5 }, 0.18)
         .fromTo(".intro-letter", { yPercent: 145, rotateZ: 8 }, { yPercent: 0, rotateZ: 0, duration: 0.88, stagger: 0.045 }, 0.3)
-        .fromTo(".intro-word-ghost--a", { xPercent: -18, autoAlpha: 0 }, { xPercent: 0, autoAlpha: 0.28, duration: 0.72 }, 0.42)
-        .fromTo(".intro-word-ghost--b", { xPercent: 18, autoAlpha: 0 }, { xPercent: 0, autoAlpha: 0.18, duration: 0.72 }, 0.47)
         .fromTo(".intro-subline-inner", { yPercent: 120 }, { yPercent: 0, duration: 0.7 }, 0.76)
-        .fromTo(".intro-meta, .intro-skip", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.42 }, 0.78)
-        .fromTo(".intro-rule-fill", { scaleX: 0 }, { scaleX: 1, duration: 1.78, ease: "none" }, 0.2)
-        .to(counter, {
-          value: 100,
-          duration: 1.78,
-          ease: "power2.inOut",
-          onUpdate: () => {
-            if (introCount) introCount.textContent = String(Math.round(counter.value)).padStart(3, "0");
-          },
-        }, 0.2)
-        .to(".intro-word-ghost--a", { xPercent: 3, duration: 0.08, repeat: 3, yoyo: true, ease: "none" }, 1.5)
-        .to(".intro-word-ghost--b", { xPercent: -2, duration: 0.06, repeat: 3, yoyo: true, ease: "none" }, 1.54)
-        .to(".intro-halo", { rotate: 12, scale: 1.04, duration: 0.7, ease: "power2.inOut" }, 1.28);
+        .fromTo(".intro-skip", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.42 }, 0.78)
+        .to(".intro-leaf:nth-child(odd)", { x: 5, y: -3, duration: 0.82, ease: "sine.inOut" }, 1.18)
+        .to(".intro-leaf:nth-child(even)", { x: -4, y: 2, duration: 0.9, ease: "sine.inOut" }, 1.22)
+        .to(".intro-tree", { rotate: -0.7, transformOrigin: "50% 100%", duration: 0.92, ease: "sine.inOut" }, 1.12);
 
       skipIntroRef.current = exitIntro;
     }
@@ -403,12 +388,6 @@ export default function Home() {
   return (
     <main ref={pageRef} className="site-shell">
       <div className="intro-splash" data-intro>
-        <div className="intro-panel intro-panel--top" />
-        <div className="intro-panel intro-panel--bottom" />
-        <div className="intro-grid" aria-hidden="true">
-          <span className="intro-grid-line" /><span className="intro-grid-line" /><span className="intro-grid-line" />
-          <span className="intro-grid-line" /><span className="intro-grid-line" /><span className="intro-grid-line" />
-        </div>
         <div className="intro-halo" aria-hidden="true">
           <i className="intro-halo-ring" /><i className="intro-halo-ring" /><i className="intro-halo-ring" />
           <span className="intro-signal-dot" />
@@ -422,8 +401,6 @@ export default function Home() {
             {Array.from({ length: 18 }, (_, index) => <i className="intro-leaf" key={index} />)}
           </div>
         </div>
-        <div className="intro-tech intro-tech--left" aria-hidden="true"><span>IDENTITY SIGNAL / 0316</span><span>31.2304° N · 121.4737° E</span></div>
-        <div className="intro-tech intro-tech--right" aria-hidden="true"><span>PERSONAL ARCHIVE</span><span>EST. MMXXVI</span></div>
         <div className="intro-content">
           <div className="intro-word-wrap" aria-label="Morten Liu">
             <div className="intro-word">
@@ -431,14 +408,10 @@ export default function Home() {
                 <span className="intro-letter-mask" key={`${letter}-${index}`}><span className="intro-letter">{letter}</span></span>
               ))}
             </div>
-            <span className="intro-word-ghost intro-word-ghost--a" aria-hidden="true">MORTEN—LIU</span>
-            <span className="intro-word-ghost intro-word-ghost--b" aria-hidden="true">MORTEN—LIU</span>
           </div>
-          <div className="intro-subline"><span className="intro-subline-inner">A QUIET WORLD · TRANSMITTED LOUDLY</span></div>
+          <div className="intro-subline"><span className="intro-subline-inner">PERSONAL ARCHIVE · EST. MMXXVI</span></div>
         </div>
-        <div className="intro-meta"><span data-intro-count>000</span><div className="intro-rule"><span className="intro-rule-fill" /></div><span>CALIBRATING PRIVATE FREQUENCY</span></div>
         <button className="intro-skip" type="button" onClick={() => skipIntroRef.current()}>SKIP INTRO <span aria-hidden="true">↘</span></button>
-        <div className="intro-flash" aria-hidden="true" />
       </div>
 
       <div className="motion-cursor" aria-hidden="true"><span /></div>
@@ -489,7 +462,6 @@ export default function Home() {
                   <button type="button" aria-label="下一句话" onClick={() => changeQuoteRef.current(1)}>→</button>
                   <button type="button" data-quote-pause aria-label="暂停自动轮换句子" aria-pressed="false" onClick={() => toggleAutoplayRef.current()}>暂停</button>
                   <span data-quote-counter>01 / 03</span>
-                  <i className="quote-progress"><b className="quote-progress-fill" /></i>
                 </div>
               </div>
             </div>
