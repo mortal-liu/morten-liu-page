@@ -95,8 +95,8 @@ const notes = [
 export default function Home() {
   const pageRef = useRef<HTMLElement>(null);
   const skipIntroRef = useRef<() => void>(() => undefined);
-  const changeIntroQuoteRef = useRef<(direction: number) => void>(() => undefined);
-  const toggleIntroAutoplayRef = useRef<() => void>(() => undefined);
+  const changeHeroQuoteRef = useRef<(direction: number) => void>(() => undefined);
+  const toggleHeroAutoplayRef = useRef<() => void>(() => undefined);
 
   useLayoutEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -105,11 +105,12 @@ export default function Home() {
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const intro = page.querySelector<HTMLElement>("[data-intro]");
-    const quoteText = page.querySelector<HTMLElement>("[data-intro-quote-text]");
-    const quoteSource = page.querySelector<HTMLElement>("[data-intro-quote-source]");
-    const quoteCounter = page.querySelector<HTMLElement>("[data-intro-quote-counter]");
-    const pauseButton = page.querySelector<HTMLButtonElement>("[data-intro-pause]");
-    const quoteStage = page.querySelector<HTMLElement>("[data-intro-quote-stage]");
+    const introCount = page.querySelector<HTMLElement>("[data-intro-count]");
+    const quoteText = page.querySelector<HTMLElement>("[data-hero-quote-text]");
+    const quoteSource = page.querySelector<HTMLElement>("[data-hero-quote-source]");
+    const quoteCounter = page.querySelector<HTMLElement>("[data-hero-quote-counter]");
+    const pauseButton = page.querySelector<HTMLButtonElement>("[data-hero-pause]");
+    const quoteStage = page.querySelector<HTMLElement>("[data-hero-quote-stage]");
     let entranceTimeline: gsap.core.Timeline | null = null;
     let exitTimeline: gsap.core.Timeline | null = null;
     let quoteTimeline: gsap.core.Timeline | null = null;
@@ -117,10 +118,12 @@ export default function Home() {
     let quoteIndex = 0;
     let autoplayPaused = false;
     let isExiting = false;
+    const counter = { value: 0 };
 
     const releasePage = () => {
       document.body.classList.remove("intro-lock");
       if (intro) gsap.set(intro, { autoAlpha: 0, pointerEvents: "none" });
+      if (!reducedMotion) scheduleAutoplay();
       ScrollTrigger.refresh();
     };
 
@@ -138,13 +141,13 @@ export default function Home() {
 
     const scheduleAutoplay = () => {
       progressTween?.kill();
-      gsap.set(".intro-rule-fill", { scaleX: 0 });
-      if (autoplayPaused || isExiting) return;
-      progressTween = gsap.to(".intro-rule-fill", {
+      gsap.set(".quote-hero-progress-fill", { scaleX: 0 });
+      if (autoplayPaused) return;
+      progressTween = gsap.to(".quote-hero-progress-fill", {
         scaleX: 1,
         duration: 5.8,
         ease: "none",
-        onComplete: () => changeIntroQuoteRef.current(1),
+        onComplete: () => changeHeroQuoteRef.current(1),
       });
     };
 
@@ -155,97 +158,117 @@ export default function Home() {
       pauseButton.setAttribute("aria-pressed", String(autoplayPaused));
     };
 
+    changeHeroQuoteRef.current = (direction: number) => {
+      if (quoteTimeline?.isActive()) return;
+      progressTween?.kill();
+      const nextIndex = (quoteIndex + direction + introQuotes.length) % introQuotes.length;
+
+      if (reducedMotion) {
+        quoteIndex = nextIndex;
+        writeQuote(quoteIndex);
+        return;
+      }
+
+      const leaveY = direction >= 0 ? -58 : 58;
+      const enterY = direction >= 0 ? 72 : -72;
+      quoteTimeline = gsap
+        .timeline({ defaults: { ease: "power3.inOut" }, onComplete: scheduleAutoplay })
+        .to(".quote-hero-text, .quote-hero-attribution-inner", {
+          y: leaveY,
+          autoAlpha: 0,
+          duration: 0.46,
+          stagger: 0.04,
+        })
+        .add(() => {
+          quoteIndex = nextIndex;
+          writeQuote(quoteIndex);
+        })
+        .set(".quote-hero-text, .quote-hero-attribution-inner", { y: enterY })
+        .to(".quote-hero-text, .quote-hero-attribution-inner", {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.82,
+          stagger: 0.055,
+          ease: "power4.out",
+        });
+    };
+
+    toggleHeroAutoplayRef.current = () => {
+      autoplayPaused = !autoplayPaused;
+      setAutoplayButton();
+      if (autoplayPaused) {
+        progressTween?.pause();
+      } else if (progressTween) {
+        progressTween.resume();
+      } else {
+        scheduleAutoplay();
+      }
+    };
+
+    writeQuote(quoteIndex);
+
     if (reducedMotion) {
       releasePage();
       gsap.set("[data-hero-reveal]", { yPercent: 0 });
     } else {
       document.body.classList.add("intro-lock");
-      writeQuote(quoteIndex);
-
-      changeIntroQuoteRef.current = (direction: number) => {
-        if (isExiting || quoteTimeline?.isActive()) return;
-        progressTween?.kill();
-        const nextIndex = (quoteIndex + direction + introQuotes.length) % introQuotes.length;
-        const leaveY = direction >= 0 ? -46 : 46;
-        const enterY = direction >= 0 ? 56 : -56;
-
-        quoteTimeline = gsap
-          .timeline({ defaults: { ease: "power3.inOut" }, onComplete: scheduleAutoplay })
-          .to(".intro-quote-text, .intro-attribution-inner", {
-            y: leaveY,
-            autoAlpha: 0,
-            duration: 0.42,
-            stagger: 0.035,
-          })
-          .add(() => {
-            quoteIndex = nextIndex;
-            writeQuote(quoteIndex);
-          })
-          .set(".intro-quote-text, .intro-attribution-inner", { y: enterY })
-          .to(".intro-quote-text, .intro-attribution-inner", {
-            y: 0,
-            autoAlpha: 1,
-            duration: 0.72,
-            stagger: 0.05,
-            ease: "power4.out",
-          });
-      };
-
-      toggleIntroAutoplayRef.current = () => {
-        autoplayPaused = !autoplayPaused;
-        setAutoplayButton();
-        if (autoplayPaused) {
-          progressTween?.pause();
-        } else if (progressTween) {
-          progressTween.resume();
-        } else {
-          scheduleAutoplay();
-        }
-      };
 
       const exitIntro = () => {
         if (isExiting) return;
         isExiting = true;
-        progressTween?.kill();
-        quoteTimeline?.kill();
+        entranceTimeline?.kill();
         exitTimeline = gsap
           .timeline({ defaults: { ease: "power4.inOut" }, onComplete: releasePage })
-          .to(".intro-content, .intro-controls, .intro-meta", { autoAlpha: 0, y: -22, duration: 0.48 })
-          .to(".intro-panel--top", { yPercent: -101, duration: 0.94 }, 0.28)
-          .to(".intro-panel--bottom", { yPercent: 101, duration: 0.94 }, 0.28)
-          .fromTo("[data-hero-reveal]", { yPercent: 115 }, { yPercent: 0, duration: 1.05, stagger: 0.075 }, 0.42)
-          .fromTo(
-            ".portrait-frame",
-            { clipPath: "inset(100% 0 0 0)", scale: 0.94 },
-            { clipPath: "inset(0% 0 0 0)", scale: 1, duration: 1.08 },
-            0.48,
-          )
-          .fromTo(".topbar", { autoAlpha: 0, y: -18 }, { autoAlpha: 1, y: 0, duration: 0.72 }, 0.64)
-          .fromTo(".hero-orbit", { scale: 0, rotate: -35 }, { scale: 1, rotate: 0, duration: 0.9 }, 0.71);
+          .to(".intro-word-wrap", { scale: 1.08, filter: "blur(10px)", autoAlpha: 0, duration: 0.46 }, 0)
+          .to(".intro-tech, .intro-meta, .intro-skip", { autoAlpha: 0, duration: 0.25 }, 0)
+          .fromTo(".intro-flash", { scaleX: 0 }, { scaleX: 1, duration: 0.38, ease: "power4.in" }, 0.16)
+          .to(".intro-panel--top", { yPercent: -101, duration: 0.92 }, 0.42)
+          .to(".intro-panel--bottom", { yPercent: 101, duration: 0.92 }, 0.42)
+          .to(".intro-flash", { scaleX: 0, transformOrigin: "right", duration: 0.6 }, 0.45)
+          .fromTo(".quote-hero [data-hero-reveal]", { yPercent: 118 }, { yPercent: 0, duration: 1.08, stagger: 0.075 }, 0.56)
+          .fromTo(".quote-hero-mark", { scale: 0, rotate: -45 }, { scale: 1, rotate: 0, duration: 0.9 }, 0.63)
+          .fromTo(".topbar", { autoAlpha: 0, y: -18 }, { autoAlpha: 1, y: 0, duration: 0.72 }, 0.72);
       };
 
       entranceTimeline = gsap
-        .timeline({ defaults: { ease: "power4.out" }, onComplete: scheduleAutoplay })
+        .timeline({ defaults: { ease: "power4.out" }, onComplete: exitIntro })
         .set(intro, { autoAlpha: 1, animation: "none" })
-        .fromTo(".intro-red-dot", { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.72 }, 0.08)
-        .fromTo(".intro-kicker-inner", { yPercent: 120 }, { yPercent: 0, duration: 0.68 }, 0.18)
-        .fromTo(".intro-quote-text", { y: 70, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.05 }, 0.28)
-        .fromTo(".intro-attribution-inner", { yPercent: 120 }, { yPercent: 0, duration: 0.74 }, 0.72)
-        .fromTo(".intro-controls, .intro-meta, .intro-skip", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.58 }, 0.84);
+        .fromTo(".intro-grid-line", { scaleX: 0 }, { scaleX: 1, duration: 0.95, stagger: 0.04 }, 0)
+        .fromTo(".intro-halo-ring", { scale: 0.18, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 1.1, stagger: 0.08 }, 0.08)
+        .fromTo(".intro-signal-dot", { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.52 }, 0.18)
+        .fromTo(".intro-tech", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5 }, 0.18)
+        .fromTo(".intro-letter", { yPercent: 145, rotateZ: 8 }, { yPercent: 0, rotateZ: 0, duration: 0.88, stagger: 0.045 }, 0.3)
+        .fromTo(".intro-word-ghost--a", { xPercent: -18, autoAlpha: 0 }, { xPercent: 0, autoAlpha: 0.28, duration: 0.72 }, 0.42)
+        .fromTo(".intro-word-ghost--b", { xPercent: 18, autoAlpha: 0 }, { xPercent: 0, autoAlpha: 0.18, duration: 0.72 }, 0.47)
+        .fromTo(".intro-subline-inner", { yPercent: 120 }, { yPercent: 0, duration: 0.7 }, 0.76)
+        .fromTo(".intro-meta, .intro-skip", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.42 }, 0.78)
+        .fromTo(".intro-rule-fill", { scaleX: 0 }, { scaleX: 1, duration: 1.78, ease: "none" }, 0.2)
+        .to(counter, {
+          value: 100,
+          duration: 1.78,
+          ease: "power2.inOut",
+          onUpdate: () => {
+            if (introCount) introCount.textContent = String(Math.round(counter.value)).padStart(3, "0");
+          },
+        }, 0.2)
+        .to(".intro-word-ghost--a", { xPercent: 3, duration: 0.08, repeat: 3, yoyo: true, ease: "none" }, 1.5)
+        .to(".intro-word-ghost--b", { xPercent: -2, duration: 0.06, repeat: 3, yoyo: true, ease: "none" }, 1.54)
+        .to(".intro-halo", { rotate: 12, scale: 1.04, duration: 0.7, ease: "power2.inOut" }, 1.28);
 
       skipIntroRef.current = exitIntro;
     }
 
-    const onIntroKeydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" || event.key === "Enter") skipIntroRef.current();
-      if (event.key === "ArrowLeft") changeIntroQuoteRef.current(-1);
-      if (event.key === "ArrowRight") changeIntroQuoteRef.current(1);
-      if (event.key === " " && intro && gsap.getProperty(intro, "visibility") !== "hidden") {
+    const onPageKeydown = (event: KeyboardEvent) => {
+      const introVisible = intro && gsap.getProperty(intro, "visibility") !== "hidden";
+      if (event.key === "Escape" && introVisible) skipIntroRef.current();
+      if (event.key === "ArrowLeft" && !introVisible) changeHeroQuoteRef.current(-1);
+      if (event.key === "ArrowRight" && !introVisible) changeHeroQuoteRef.current(1);
+      if (event.key === " " && !introVisible) {
         event.preventDefault();
-        toggleIntroAutoplayRef.current();
+        toggleHeroAutoplayRef.current();
       }
     };
-    document.addEventListener("keydown", onIntroKeydown);
+    document.addEventListener("keydown", onPageKeydown);
 
     const pauseOnHover = () => progressTween?.pause();
     const resumeAfterHover = () => {
@@ -300,7 +323,7 @@ export default function Home() {
           yPercent: desktop ? 10 : 5,
           scale: 1.045,
           ease: "none",
-          scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: 0.7 },
+          scrollTrigger: { trigger: ".about-hero", start: "top bottom", end: "bottom top", scrub: 0.7 },
         });
 
         gsap.to("[data-marquee-track]", {
@@ -395,7 +418,7 @@ export default function Home() {
       progressTween?.kill();
       motion.revert();
       cleanups.forEach((cleanup) => cleanup());
-      document.removeEventListener("keydown", onIntroKeydown);
+      document.removeEventListener("keydown", onPageKeydown);
       quoteStage?.removeEventListener("pointerenter", pauseOnHover);
       quoteStage?.removeEventListener("pointerleave", resumeAfterHover);
       document.body.classList.remove("intro-lock");
@@ -407,31 +430,41 @@ export default function Home() {
       <div className="intro-splash" data-intro>
         <div className="intro-panel intro-panel--top" />
         <div className="intro-panel intro-panel--bottom" />
-        <div className="intro-content">
-          <div className="intro-kicker">
-            <span className="intro-red-dot" aria-hidden="true" />
-            <span className="intro-kicker-mask"><span className="intro-kicker-inner">MORTEN—LIU · SELECTED WORDS</span></span>
+        <div className="intro-grid" aria-hidden="true">
+          <span className="intro-grid-line" /><span className="intro-grid-line" /><span className="intro-grid-line" />
+          <span className="intro-grid-line" /><span className="intro-grid-line" /><span className="intro-grid-line" />
+        </div>
+        <div className="intro-halo" aria-hidden="true">
+          <i className="intro-halo-ring" /><i className="intro-halo-ring" /><i className="intro-halo-ring" />
+          <span className="intro-signal-dot" />
+        </div>
+        <div className="intro-tech intro-tech--left" aria-hidden="true">
+          <span>IDENTITY SIGNAL / 0316</span><span>31.2304° N · 121.4737° E</span>
+        </div>
+        <div className="intro-tech intro-tech--right" aria-hidden="true">
+          <span>PERSONAL ARCHIVE</span><span>EST. MMXXVI</span>
+        </div>
+        <div className="intro-content intro-content--cinematic">
+          <div className="intro-word-wrap" aria-label="Morten Liu">
+            <div className="intro-word">
+              {"MORTEN—LIU".split("").map((letter, index) => (
+                <span className="intro-letter-mask" key={`${letter}-${index}`}><span className="intro-letter">{letter}</span></span>
+              ))}
+            </div>
+            <span className="intro-word-ghost intro-word-ghost--a" aria-hidden="true">MORTEN—LIU</span>
+            <span className="intro-word-ghost intro-word-ghost--b" aria-hidden="true">MORTEN—LIU</span>
           </div>
-          <blockquote className="intro-quote" data-intro-quote-stage lang={introQuotes[0].lang}>
-            <p className="intro-quote-text" data-intro-quote-text>{introQuotes[0].text}</p>
-            <footer className="intro-attribution-mask">
-              <span className="intro-attribution-inner">— <span data-intro-quote-source>{introQuotes[0].source} · {introQuotes[0].author}</span></span>
-            </footer>
-          </blockquote>
+          <div className="intro-subline"><span className="intro-subline-inner">A QUIET WORLD · TRANSMITTED LOUDLY</span></div>
         </div>
         <div className="intro-meta">
-          <span data-intro-quote-counter>01 / 03</span>
+          <span data-intro-count>000</span>
           <div className="intro-rule"><span className="intro-rule-fill" /></div>
-          <span>WORDS I KEEP CLOSE</span>
-        </div>
-        <div className="intro-controls" aria-label="句子轮播控制">
-          <button type="button" aria-label="上一句话" onClick={() => changeIntroQuoteRef.current(-1)}>←</button>
-          <button type="button" aria-label="下一句话" onClick={() => changeIntroQuoteRef.current(1)}>→</button>
-          <button type="button" data-intro-pause aria-label="暂停自动轮换句子" aria-pressed="false" onClick={() => toggleIntroAutoplayRef.current()}>暂停</button>
+          <span>CALIBRATING PRIVATE FREQUENCY</span>
         </div>
         <button className="intro-skip" type="button" onClick={() => skipIntroRef.current()}>
-          进入主页 <span aria-hidden="true">↘</span>
+          SKIP INTRO <span aria-hidden="true">↘</span>
         </button>
+        <div className="intro-flash" aria-hidden="true" />
       </div>
 
       <div className="motion-cursor" aria-hidden="true"><span /></div>
@@ -451,13 +484,60 @@ export default function Home() {
           </nav>
         </header>
 
-        <section className="hero" id="home" aria-labelledby="page-title">
+        <section className="quote-hero" id="home" aria-label="Morten 喜欢的句子">
+          <div className="quote-hero-grid" aria-hidden="true"><span /><span /><span /><span /><span /></div>
+          <div className="quote-hero-orbit" aria-hidden="true"><span className="quote-hero-mark" /></div>
+
+          <div className="quote-hero-heading hero-line">
+            <p data-hero-reveal><span className="quote-hero-dot" />MORTEN—LIU · WORDS I KEEP CLOSE</p>
+          </div>
+
+          <div className="quote-hero-stage" data-hero-quote-stage>
+            <blockquote lang={introQuotes[0].lang}>
+              <div className="quote-hero-text-mask hero-line">
+                <p className="quote-hero-text" data-hero-reveal data-hero-quote-text>{introQuotes[0].text}</p>
+              </div>
+              <footer className="quote-hero-attribution-mask hero-line">
+                <span className="quote-hero-attribution-inner" data-hero-reveal>— <span data-hero-quote-source>{introQuotes[0].source} · {introQuotes[0].author}</span></span>
+              </footer>
+            </blockquote>
+          </div>
+
+          <div className="quote-hero-controls hero-line" aria-label="句子轮播控制">
+            <div data-hero-reveal>
+              <button type="button" aria-label="上一句话" onClick={() => changeHeroQuoteRef.current(-1)}>←</button>
+              <button type="button" aria-label="下一句话" onClick={() => changeHeroQuoteRef.current(1)}>→</button>
+              <button type="button" data-hero-pause aria-label="暂停自动轮换句子" aria-pressed="false" onClick={() => toggleHeroAutoplayRef.current()}>暂停</button>
+            </div>
+          </div>
+
+          <div className="quote-hero-progress hero-line">
+            <div data-hero-reveal>
+              <span data-hero-quote-counter>01 / 03</span>
+              <i><b className="quote-hero-progress-fill" /></i>
+              <span>A SMALL INDEX OF BELIEF</span>
+            </div>
+          </div>
+
+          <aside className="quote-hero-signature hero-line">
+            <div data-hero-reveal>
+              <img src="/avatar.jpg" alt="" />
+              <p><strong>Morten Liu</strong><span>Collector of sounds, frames & words</span></p>
+            </div>
+          </aside>
+
+          <a className="quote-hero-scroll hero-line" data-magnetic href="#about">
+            <span data-hero-reveal>继续认识我 <i aria-hidden="true">↓</i></span>
+          </a>
+        </section>
+
+        <section className="hero about-hero" id="about" aria-labelledby="page-title">
           <div className="hero-grid" aria-hidden="true">
             <span /><span /><span /><span />
           </div>
           <div className="hero-orbit" aria-hidden="true"><span /></div>
 
-          <div className="hero-intro" id="about">
+          <div className="hero-intro">
             <p className="eyebrow"><span data-hero-reveal>A quiet introduction</span></p>
             <h1 id="page-title">
               <span className="hero-line"><span data-hero-reveal>Morten</span></span>
