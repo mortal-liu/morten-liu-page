@@ -193,8 +193,10 @@ export default function Home() {
         .set(transition, { autoAlpha: 1, pointerEvents: "auto" })
         .set(".page-transition-canopy", { clipPath: `circle(0% at ${originX}px ${originY}px)` })
         .set(".transition-branch", { scaleX: 0, transformOrigin: "left center" })
+        .set(".branch-leaf", { scale: 0, autoAlpha: 0 })
         .set(".transition-leaf", { scale: 0, rotate: -55, autoAlpha: 0 })
         .to(".transition-branch", { scaleX: 1, duration: 0.72, stagger: 0.035, ease: "power3.out" }, 0)
+        .to(".branch-leaf", { scale: 1, autoAlpha: 1, duration: 0.42, stagger: 0.018, ease: "back.out(1.5)" }, 0.18)
         .to(".transition-leaf", { scale: 1, rotate: 0, autoAlpha: 1, duration: 0.48, stagger: 0.025, ease: "back.out(1.7)" }, 0.16)
         .to(".page-transition-canopy", { clipPath: `circle(155% at ${originX}px ${originY}px)`, duration: 0.94 }, 0.08)
         .fromTo(transitionLabel, { yPercent: 120, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.72 }, 0.34)
@@ -251,8 +253,10 @@ export default function Home() {
         .set(transition, { autoAlpha: 1, pointerEvents: "auto" })
         .set(".page-transition-canopy", { clipPath: `circle(0% at ${originX}px ${originY}px)` })
         .set(".transition-branch", { scaleX: 0, transformOrigin: "left center" })
+        .set(".branch-leaf", { scale: 0, autoAlpha: 0 })
         .set(".transition-leaf", { scale: 0, rotate: 48, autoAlpha: 0, y: 0 })
         .to(".transition-branch", { scaleX: 1, duration: 0.66, stagger: 0.03, ease: "power3.out" })
+        .to(".branch-leaf", { scale: 1, autoAlpha: 1, duration: 0.4, stagger: 0.016, ease: "back.out(1.45)" }, 0.16)
         .to(".transition-leaf", { scale: 1, rotate: 0, autoAlpha: 1, duration: 0.45, stagger: 0.022, ease: "back.out(1.6)" }, 0.12)
         .to(".page-transition-canopy", { clipPath: `circle(155% at ${originX}px ${originY}px)`, duration: 0.88 }, 0.06)
         .fromTo(transitionLabel, { yPercent: 120 }, { yPercent: 0, duration: 0.6 }, 0.3)
@@ -290,21 +294,28 @@ export default function Home() {
         introTimeline?.kill();
         introExitTimeline = gsap
           .timeline({ defaults: { ease: "power3.inOut" }, onComplete: releaseIntro })
-          .to(".intro-content, .intro-skip, .intro-halo", { y: -14, autoAlpha: 0, duration: 0.5 }, 0)
-          .to(".intro-tree", { rotate: -2.2, x: "+=18", duration: 0.62, ease: "sine.inOut" }, 0)
-          .to(".intro-leaf", {
-            x: () => gsap.utils.random(window.innerWidth * 0.28, window.innerWidth * 0.78),
-            y: () => gsap.utils.random(-window.innerHeight * 0.18, window.innerHeight * 0.16),
-            rotate: () => gsap.utils.random(110, 330),
+          .to(".intro-content", { x: 46, filter: "blur(4px)", autoAlpha: 0, duration: 0.62, ease: "power2.in" }, 0.08)
+          .to(".intro-skip, .intro-halo", { x: 24, autoAlpha: 0, duration: 0.46 }, 0.04)
+          .to(".intro-tree", {
+            x: `+=${window.innerWidth * 0.68}`,
+            y: -34,
+            rotate: 11,
+            skewX: -2.5,
             autoAlpha: 0,
-            duration: 1.12,
-            stagger: 0.026,
+            duration: 1.08,
             ease: "power2.in",
-          }, 0.06)
-          .to(".intro-branch", { scaleX: 0.72, autoAlpha: 0, duration: 0.72, stagger: 0.025 }, 0.16)
-          .to(".intro-trunk", { scaleY: 0.18, autoAlpha: 0, duration: 0.78, transformOrigin: "50% 100%" }, 0.2)
-          .fromTo("[data-home-reveal]", { yPercent: 82, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.88, stagger: 0.05 }, 0.32)
-          .to(intro, { autoAlpha: 0, duration: 0.72, ease: "sine.inOut" }, 0.48);
+          }, 0)
+          .to(".intro-leaf", {
+            x: () => gsap.utils.random(90, 280),
+            y: () => gsap.utils.random(-70, 64),
+            rotate: () => gsap.utils.random(120, 360),
+            autoAlpha: 0,
+            duration: 0.9,
+            stagger: 0.022,
+            ease: "power2.in",
+          }, 0.12)
+          .fromTo("[data-home-reveal]", { yPercent: 82, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.88, stagger: 0.05 }, 0.3)
+          .to(intro, { autoAlpha: 0, duration: 0.68, ease: "sine.inOut" }, 0.5);
       };
 
       introTimeline = gsap
@@ -318,9 +329,18 @@ export default function Home() {
         .fromTo(".intro-letter", { yPercent: 145, rotateZ: 8 }, { yPercent: 0, rotateZ: 0, duration: 0.88, stagger: 0.045 }, 0.3)
         .fromTo(".intro-subline-inner", { yPercent: 120 }, { yPercent: 0, duration: 0.7 }, 0.76)
         .fromTo(".intro-skip", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.42 }, 0.78)
-        .to(".intro-leaf:nth-child(odd)", { x: 5, y: -3, duration: 0.82, ease: "sine.inOut" }, 1.18)
-        .to(".intro-leaf:nth-child(even)", { x: -4, y: 2, duration: 0.9, ease: "sine.inOut" }, 1.22)
-        .to(".intro-tree", { rotate: -0.7, transformOrigin: "50% 100%", duration: 0.92, ease: "sine.inOut" }, 1.12);
+        .set(".intro-wind-leaf", { x: -window.innerWidth * 0.18, autoAlpha: 0 }, 0)
+        .to(".intro-tree", { rotate: -2.4, skewX: -1.2, transformOrigin: "50% 100%", duration: 0.72, ease: "sine.inOut" }, 1.02)
+        .to(".intro-wind-leaf", { autoAlpha: 1, duration: 0.12, stagger: 0.025 }, 0.96)
+        .to(".intro-wind-leaf", {
+          x: window.innerWidth * 1.28,
+          y: () => gsap.utils.random(-48, 72),
+          rotate: () => gsap.utils.random(260, 680),
+          duration: 1.22,
+          stagger: 0.036,
+          ease: "power1.inOut",
+        }, 0.96)
+        .to(".intro-wind-leaf", { autoAlpha: 0, duration: 0.2, stagger: 0.026 }, 2.08);
 
       skipIntroRef.current = exitIntro;
     }
@@ -401,6 +421,9 @@ export default function Home() {
             {Array.from({ length: 18 }, (_, index) => <i className="intro-leaf" key={index} />)}
           </div>
         </div>
+        <div className="intro-wind" aria-hidden="true">
+          {Array.from({ length: 16 }, (_, index) => <i className="intro-wind-leaf" key={index} />)}
+        </div>
         <div className="intro-content">
           <div className="intro-word-wrap" aria-label="Morten Liu">
             <div className="intro-word">
@@ -425,9 +448,11 @@ export default function Home() {
       <div className="page-transition" data-page-transition aria-hidden="true">
         <div className="page-transition-canopy" />
         <div className="transition-tree" aria-hidden="true">
-          <span className="transition-branch transition-branch--1" /><span className="transition-branch transition-branch--2" />
-          <span className="transition-branch transition-branch--3" /><span className="transition-branch transition-branch--4" />
-          <span className="transition-branch transition-branch--5" /><span className="transition-branch transition-branch--6" />
+          {Array.from({ length: 6 }, (_, index) => (
+            <span className={`transition-branch transition-branch--${index + 1}`} key={`branch-${index}`}>
+              <i className="branch-leaf branch-leaf--a" /><i className="branch-leaf branch-leaf--b" />
+            </span>
+          ))}
           {Array.from({ length: 14 }, (_, index) => <i className="transition-leaf" key={index} />)}
         </div>
         <div className="transition-label-mask"><span data-transition-label>STORY</span></div>
