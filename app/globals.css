@@ -445,6 +445,7 @@ button {
   opacity: 0;
   pointer-events: none;
   perspective: 900px;
+  contain: layout paint style;
 }
 
 .page-transition-canopy {
@@ -455,6 +456,8 @@ button {
     radial-gradient(circle at 72% 68%, rgba(189, 103, 75, 0.12), transparent 28%),
     var(--transition-color);
   clip-path: circle(0% at var(--origin-x) var(--origin-y));
+  will-change: clip-path;
+  transform: translateZ(0);
 }
 
 .transition-tree {
@@ -463,6 +466,7 @@ button {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+  contain: paint;
 }
 
 .transition-branch {
@@ -480,6 +484,8 @@ button {
   filter: drop-shadow(0 8px 14px rgba(4, 8, 5, 0.25));
   mask-image: linear-gradient(to right, #000 0 76%, transparent 100%);
   transform-origin: left center;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .transition-branch::before,
@@ -513,6 +519,8 @@ button {
   height: clamp(24px, 2.5vw, 40px);
   box-shadow: inset 2px 0 rgba(224, 233, 216, 0.15), 0 6px 12px rgba(7, 14, 8, 0.2);
   transform-origin: 10% 90%;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .branch-leaf--a { top: -165%; left: 39%; transform: rotate(-39deg); }
@@ -524,6 +532,8 @@ button {
   width: clamp(14px, 1.6vw, 24px);
   height: clamp(26px, 3vw, 46px);
   transform-origin: 10% 90%;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .transition-leaf:nth-child(7) { left: calc(var(--origin-x) + 13vw); top: calc(var(--origin-y) - 8vh); }
@@ -1420,12 +1430,12 @@ button {
 }
 
 .favorite-detail-view[data-visible="true"] {
-  animation: favorite-detail-in 820ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: favorite-detail-in 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes favorite-detail-in {
-  from { clip-path: inset(0 49% 0 49%); }
-  to { clip-path: inset(0 0 0 0); }
+  from { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.992); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
 
 .favorite-archive {
@@ -1435,6 +1445,7 @@ button {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  contain: layout paint;
 }
 
 .favorite-archive-header {
@@ -1531,21 +1542,32 @@ button {
   background: #0d1711;
 }
 
-.music-ambient {
+.music-ambient-stack {
   position: absolute;
   z-index: 0;
-  inset: -12%;
-  width: 124%;
-  height: 124%;
-  object-fit: cover;
-  filter: blur(64px) saturate(0.72) brightness(0.35);
-  opacity: 0.52;
-  animation: archive-image-in 760ms ease both;
+  inset: -7%;
+  overflow: hidden;
+  pointer-events: none;
+  contain: paint;
 }
 
-@keyframes archive-image-in {
-  from { opacity: 0; transform: scale(1.08); }
-  to { opacity: 0.52; transform: scale(1); }
+.music-ambient-stack img {
+  position: absolute;
+  inset: -4%;
+  width: 108%;
+  height: 108%;
+  object-fit: cover;
+  filter: blur(34px) saturate(0.7) brightness(0.34);
+  opacity: 0;
+  transform: translateZ(0) scale(1.045);
+  transition: opacity 620ms ease, transform 940ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+}
+
+.music-ambient-stack img[data-active="true"] {
+  opacity: 0.5;
+  transform: translateZ(0) scale(1);
 }
 
 .music-room {
@@ -1565,20 +1587,33 @@ button {
   max-width: 100%;
 }
 
-.music-art-stage > img {
+.music-cover-stack {
   position: relative;
   z-index: 2;
-  display: block;
   width: 100%;
   aspect-ratio: 1;
-  object-fit: cover;
   box-shadow: 0 34px 80px rgba(0, 0, 0, 0.42);
-  animation: cover-arrive 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  contain: paint;
 }
 
-@keyframes cover-arrive {
-  from { opacity: 0; transform: translateY(16px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+.music-cover-stack img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: translate3d(0, 9px, 0) scale(0.985);
+  transition: opacity 480ms ease, transform 680ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+}
+
+.music-cover-stack img[data-active="true"] {
+  z-index: 1;
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
 }
 
 .music-art-stage > small {
@@ -1601,6 +1636,8 @@ button {
   background: repeating-radial-gradient(circle, #171917 0 2px, #0c0e0d 3px 7px);
   box-shadow: 18px 22px 48px rgba(0, 0, 0, 0.38);
   animation: vinyl-turn 18s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .music-vinyl::before,
@@ -1617,7 +1654,17 @@ button {
 @keyframes vinyl-turn { to { transform: rotate(360deg); } }
 
 .music-information { min-width: 0; }
-.music-information > p {
+.music-information-copy {
+  animation: music-copy-in 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+@keyframes music-copy-in {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+.music-information-copy > p {
   margin: 0 0 18px;
   font-size: 7px;
   font-weight: 600;
@@ -1625,13 +1672,13 @@ button {
   opacity: 0.52;
 }
 
-.music-information h3 {
+.music-information-copy h3 {
   margin: 0;
   font: 400 clamp(44px, 6vw, 92px) / 0.95 Georgia, "Songti SC", serif;
   letter-spacing: -0.065em;
 }
 
-.music-information > span {
+.music-information-copy > span {
   display: block;
   margin-top: 14px;
   color: rgba(243, 238, 226, 0.64);
@@ -1662,12 +1709,14 @@ button {
   background: transparent;
   text-align: left;
   cursor: pointer;
-  transition: color 300ms ease, padding 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translate3d(0, 0, 0);
+  transition: color 280ms ease, transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
 }
 
 .music-track-list button:hover,
 .music-track-list button:focus-visible,
-.music-track-list button[data-selected="true"] { padding-left: 10px; color: var(--paper); }
+.music-track-list button[data-selected="true"] { color: var(--paper); transform: translate3d(8px, 0, 0); }
 .music-track-list button > span,
 .music-track-list button small { font-size: 6px; font-weight: 600; letter-spacing: 0.15em; }
 .music-track-list button strong { font: 400 clamp(18px, 1.8vw, 28px) / 1.1 Georgia, "Songti SC", serif; }
@@ -1687,6 +1736,8 @@ button {
   filter: saturate(0.72) contrast(1.04) brightness(0.54);
   opacity: 0.62;
   animation: screen-dissolve 780ms ease both;
+  will-change: opacity, transform;
+  backface-visibility: hidden;
 }
 
 @keyframes screen-dissolve {
@@ -1778,6 +1829,7 @@ button {
   text-align: left;
   cursor: pointer;
   transition: flex-basis 560ms cubic-bezier(0.22, 1, 0.36, 1), transform 420ms ease, border-color 320ms ease;
+  will-change: transform;
 }
 
 .screen-poster-rail button:hover,
@@ -1849,13 +1901,15 @@ button {
   background: transparent;
   text-align: left;
   cursor: pointer;
-  transition: color 300ms ease, padding 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translate3d(0, 0, 0);
+  transition: color 280ms ease, transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
 }
 
 .book-index button:last-child { border-bottom: 1px solid rgba(23, 32, 25, 0.18); }
 .book-index button:hover,
 .book-index button:focus-visible,
-.book-index button[data-selected="true"] { padding-left: 10px; color: #172019; }
+.book-index button[data-selected="true"] { color: #172019; transform: translate3d(8px, 0, 0); }
 .book-index button > span { grid-row: 1 / 3; font-size: 6px; letter-spacing: 0.15em; }
 .book-index button strong { font: 400 clamp(17px, 1.55vw, 25px) / 1.1 Georgia, "Songti SC", serif; }
 .book-index button small { font-size: 6px; letter-spacing: 0.13em; opacity: 0.56; }
@@ -1874,20 +1928,33 @@ button {
   transform: rotate(3deg);
 }
 
-.book-cover-stage img {
+.book-cover-stack {
   position: relative;
   z-index: 1;
-  display: block;
   width: 100%;
   aspect-ratio: 0.65;
-  object-fit: cover;
   box-shadow: 18px 26px 54px rgba(46, 35, 24, 0.24);
-  animation: book-page-in 660ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  contain: paint;
 }
 
-@keyframes book-page-in {
-  from { opacity: 0; transform: perspective(800px) rotateY(-10deg) translateX(-12px); }
-  to { opacity: 1; transform: perspective(800px) rotateY(0) translateX(0); }
+.book-cover-stack img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: translate3d(-8px, 0, 0) scale(0.99);
+  transition: opacity 460ms ease, transform 640ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+}
+
+.book-cover-stack img[data-active="true"] {
+  z-index: 1;
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
 }
 
 .book-cover-stage > small {
@@ -2123,9 +2190,9 @@ button {
   .music-art-stage { width: 100%; }
   .music-vinyl { right: -15%; }
   .music-art-stage > small { margin-top: 8px; font-size: 4px; }
-  .music-information > p { margin-bottom: 8px; font-size: 5px; }
-  .music-information h3 { font-size: clamp(32px, 10vw, 48px); }
-  .music-information > span { margin-top: 8px; font-size: 7px; line-height: 1.4; }
+  .music-information-copy > p { margin-bottom: 8px; font-size: 5px; }
+  .music-information-copy h3 { font-size: clamp(32px, 10vw, 48px); }
+  .music-information-copy > span { margin-top: 8px; font-size: 7px; line-height: 1.4; }
   .music-information .annotation-placeholder { margin-top: 14px; }
   .music-information .annotation-placeholder p { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .music-track-list { grid-column: 1 / -1; grid-template-columns: 1fr; }
@@ -2133,7 +2200,7 @@ button {
   .music-track-list button { grid-template-columns: 24px 1fr auto; padding: 10px 4px; }
   .music-track-list button:hover,
   .music-track-list button:focus-visible,
-  .music-track-list button[data-selected="true"] { padding-left: 8px; }
+  .music-track-list button[data-selected="true"] { transform: translate3d(4px, 0, 0); }
   .music-track-list button strong { font-size: 16px; }
   .music-track-list button small { display: block; font-size: 4px; }
 

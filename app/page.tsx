@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 
 type PanelId = "story" | "favorites" | "pictures" | "thinking";
@@ -161,6 +161,7 @@ export default function Home() {
   const [screenSelection, setScreenSelection] = useState(0);
   const [bookSelection, setBookSelection] = useState(0);
   const pageRef = useRef<HTMLElement>(null);
+  const preloadedFavoriteImagesRef = useRef<HTMLImageElement[]>([]);
   const favoriteEnterTimerRef = useRef<number | null>(null);
   const favoriteViewRef = useRef<FavoriteId | null>(null);
   const skipIntroRef = useRef<() => void>(() => undefined);
@@ -171,6 +172,24 @@ export default function Home() {
   useLayoutEffect(() => {
     favoriteViewRef.current = favoriteView;
   }, [favoriteView]);
+
+  useEffect(() => {
+    const preloadTimer = window.setTimeout(() => {
+      const sources = [...musicFavorites, ...bookFavorites].map((item) => item.image);
+      preloadedFavoriteImagesRef.current = sources.map((source) => {
+        const image = new Image();
+        image.decoding = "async";
+        image.src = source;
+        void image.decode().catch(() => undefined);
+        return image;
+      });
+    }, 1400);
+
+    return () => {
+      window.clearTimeout(preloadTimer);
+      preloadedFavoriteImagesRef.current = [];
+    };
+  }, []);
 
   const enterFavoriteSection = (id: FavoriteId) => {
     if (favoriteEnterTimerRef.current) window.clearTimeout(favoriteEnterTimerRef.current);
@@ -866,19 +885,36 @@ function MusicArchive({
 
   return (
     <section className="favorite-archive music-archive" aria-label="音乐收藏">
-      <img className="music-ambient" key={activeItem.image} src={activeItem.image} alt="" aria-hidden="true" />
+      <div className="music-ambient-stack" aria-hidden="true">
+        {musicFavorites.map((item, index) => (
+          <img key={item.title} data-active={index === activeIndex} src={item.image} alt="" decoding="async" />
+        ))}
+      </div>
       <ArchiveHeader index="01" label="MUSIC / LISTENING ROOM" onBack={onBack} />
       <div className="music-room">
         <div className="music-art-stage">
           <span className="music-vinyl" aria-hidden="true"><i /></span>
-          <img key={activeItem.image} src={activeItem.image} alt={`${activeItem.title}封面`} />
+          <div className="music-cover-stack">
+            {musicFavorites.map((item, index) => (
+              <img
+                key={item.title}
+                data-active={index === activeIndex}
+                src={item.image}
+                alt={index === activeIndex ? `${item.title}封面` : ""}
+                aria-hidden={index !== activeIndex}
+                decoding="async"
+              />
+            ))}
+          </div>
           <small>ASEN / PERSONAL ROTATION</small>
         </div>
 
         <div className="music-information">
-          <p>NOW SELECTED / {String(activeIndex + 1).padStart(2, "0")}</p>
-          <h3>{activeItem.title}</h3>
-          <span>{activeItem.artist}</span>
+          <div className="music-information-copy" key={activeItem.title}>
+            <p>NOW SELECTED / {String(activeIndex + 1).padStart(2, "0")}</p>
+            <h3>{activeItem.title}</h3>
+            <span>{activeItem.artist}</span>
+          </div>
           <AnnotationPlaceholder prompt="在这里写下它为什么会被你反复播放，或某一句留下来的歌词。" />
         </div>
 
@@ -976,7 +1012,18 @@ function BookArchive({
 
         <div className="book-cover-stage">
           <span aria-hidden="true" />
-          <img key={activeItem.image} src={activeItem.image} alt={`${activeItem.title}封面`} />
+          <div className="book-cover-stack">
+            {bookFavorites.map((item, index) => (
+              <img
+                key={item.title}
+                data-active={index === activeIndex}
+                src={item.image}
+                alt={index === activeIndex ? `${item.title}封面` : ""}
+                aria-hidden={index !== activeIndex}
+                decoding="async"
+              />
+            ))}
+          </div>
           <small>PRIVATE COPY / {String(activeIndex + 1).padStart(3, "0")}</small>
         </div>
 
