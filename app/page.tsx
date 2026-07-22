@@ -247,7 +247,8 @@ export default function Home() {
     const coverIndex = page.querySelector<HTMLElement>("[data-cover-index]");
     const coverImages = Array.from(page.querySelectorAll<HTMLImageElement>("[data-cover-image]"));
     const backdropImages = Array.from(page.querySelectorAll<HTMLImageElement>("[data-quote-backdrop-image]"));
-    const quoteStage = page.querySelector<HTMLElement>("[data-quote-stage]");
+    const quoteCycleMs = 6000;
+    const quoteSessionKey = "morten-liu:quote-timeline";
 
     let introTimeline: gsap.core.Timeline | null = null;
     let introExitTimeline: gsap.core.Timeline | null = null;
@@ -255,6 +256,7 @@ export default function Home() {
     let quoteProgress: gsap.core.Tween | null = null;
     let panelTimeline: gsap.core.Timeline | null = null;
     let quoteIndex = 0;
+    let initialQuoteDelay = quoteCycleMs / 1000;
     let activePanel: PanelId | null = null;
     let introIsExiting = false;
     let panelIsTransitioning = false;
@@ -264,6 +266,41 @@ export default function Home() {
 
     document.body.classList.add("experience-lock");
     page.querySelectorAll<HTMLElement>("[data-panel]").forEach((panel) => panel.setAttribute("inert", ""));
+
+    const persistQuotePosition = (index: number, changedAt = Date.now()) => {
+      try {
+        window.sessionStorage.setItem(quoteSessionKey, JSON.stringify({ index, changedAt }));
+      } catch {
+        // The carousel remains functional when browser storage is unavailable.
+      }
+    };
+
+    try {
+      const storedValue = window.sessionStorage.getItem(quoteSessionKey);
+      const stored = storedValue ? JSON.parse(storedValue) as { index?: number; changedAt?: number } : null;
+      const storedIndex = stored?.index;
+      const storedChangedAt = stored?.changedAt;
+      if (
+        typeof storedIndex === "number"
+        && Number.isInteger(storedIndex)
+        && storedIndex >= 0
+        && storedIndex < featuredQuotes.length
+        && typeof storedChangedAt === "number"
+      ) {
+        const now = Date.now();
+        const normalizedChangedAt = Math.min(storedChangedAt, now);
+        const elapsed = Math.max(0, now - normalizedChangedAt);
+        const elapsedSteps = Math.floor(elapsed / quoteCycleMs);
+        quoteIndex = (storedIndex + elapsedSteps) % featuredQuotes.length;
+        const lastChangeAt = normalizedChangedAt + elapsedSteps * quoteCycleMs;
+        initialQuoteDelay = Math.max(0.1, (quoteCycleMs - (now - lastChangeAt)) / 1000);
+        persistQuotePosition(quoteIndex, lastChangeAt);
+      } else {
+        persistQuotePosition(quoteIndex);
+      }
+    } catch {
+      persistQuotePosition(quoteIndex);
+    }
 
     const writeQuote = (index: number) => {
       const quote = featuredQuotes[index];
@@ -302,15 +339,28 @@ export default function Home() {
       );
     };
 
-    const scheduleQuote = () => {
+    const initializeQuoteMedia = () => {
+      const quote = featuredQuotes[quoteIndex];
+      const activeCover = coverImages[mediaSlot];
+      const activeBackdrop = backdropImages[mediaSlot];
+      if (activeCover) {
+        activeCover.src = quote.image;
+        activeCover.alt = quote.imageAlt;
+      }
+      if (activeBackdrop) activeBackdrop.src = quote.backdropImage;
+      gsap.set([activeCover, activeBackdrop].filter(Boolean), { autoAlpha: 1, scale: 1 });
+      gsap.set([coverImages[1], backdropImages[1]].filter(Boolean), { autoAlpha: 0 });
+    };
+
+    const scheduleQuote = (delay = quoteCycleMs / 1000) => {
       quoteProgress?.kill();
-      if (activePanel || reducedMotion) return;
-      quoteProgress = gsap.delayedCall(6, () => changeQuoteRef.current(1));
+      if (disposed) return;
+      quoteProgress = gsap.delayedCall(delay, () => changeQuoteRef.current(1));
     };
 
     changeQuoteRef.current = (direction: number) => {
       void (async () => {
-        if (quoteTimeline?.isActive() || quoteIsTransitioning || activePanel || panelIsTransitioning) return;
+        if (quoteTimeline?.isActive() || quoteIsTransitioning) return;
         quoteIsTransitioning = true;
 
         const nextIndex = (quoteIndex + direction + featuredQuotes.length) % featuredQuotes.length;
@@ -318,7 +368,7 @@ export default function Home() {
         quoteProgress?.kill();
         await prepareQuoteMedia(nextIndex, nextSlot);
 
-        if (disposed || activePanel || panelIsTransitioning) {
+        if (disposed) {
           quoteIsTransitioning = false;
           return;
         }
@@ -335,6 +385,8 @@ export default function Home() {
           gsap.set([incomingCover, incomingBackdrop].filter(Boolean), { autoAlpha: 1, scale: 1 });
           mediaSlot = nextSlot;
           quoteIsTransitioning = false;
+          persistQuotePosition(quoteIndex);
+          scheduleQuote();
           return;
         }
 
@@ -344,6 +396,7 @@ export default function Home() {
             onComplete: () => {
               mediaSlot = nextSlot;
               quoteIsTransitioning = false;
+              persistQuotePosition(quoteIndex);
               scheduleQuote();
             },
           })
@@ -388,7 +441,6 @@ export default function Home() {
       const sourceButton = page.querySelector<HTMLElement>(`[data-portal="${id}"]`);
       if (!target || !homeScreen || !transition || !transitionLabel) return;
 
-      quoteProgress?.pause();
       transitionLabel.textContent = panelTitles[id];
 
       if (reducedMotion) {
@@ -461,7 +513,6 @@ export default function Home() {
         target.setAttribute("inert", "");
         gsap.set(homeScreen, { autoAlpha: 1, pointerEvents: "auto" });
         activePanel = null;
-        scheduleQuote();
         page.querySelector<HTMLButtonElement>(`[data-portal="${closingId}"]`)?.focus();
         return;
       }
@@ -482,7 +533,6 @@ export default function Home() {
           defaults: { ease: "power4.inOut" },
           onComplete: () => {
             panelIsTransitioning = false;
-            scheduleQuote();
             page.querySelector<HTMLButtonElement>(`[data-portal="${closingId}"]`)?.focus();
           },
         })
@@ -514,10 +564,11 @@ export default function Home() {
     const releaseIntro = () => {
       document.body.classList.remove("intro-lock");
       if (intro) gsap.set(intro, { autoAlpha: 0, pointerEvents: "none" });
-      scheduleQuote();
     };
 
+    initializeQuoteMedia();
     writeQuote(quoteIndex);
+    scheduleQuote(initialQuoteDelay);
 
     if (reducedMotion) {
       releaseIntro();
@@ -581,13 +632,6 @@ export default function Home() {
       skipIntroRef.current = exitIntro;
     }
 
-    const pauseOnHover = () => quoteProgress?.pause();
-    const resumeAfterHover = () => {
-      if (!activePanel) quoteProgress?.resume();
-    };
-    quoteStage?.addEventListener("pointerenter", pauseOnHover);
-    quoteStage?.addEventListener("pointerleave", resumeAfterHover);
-
     const onKeydown = (event: KeyboardEvent) => {
       const introVisible = intro && gsap.getProperty(intro, "visibility") !== "hidden";
       if (event.key === "Escape") {
@@ -638,8 +682,6 @@ export default function Home() {
       quoteTimeline?.kill();
       quoteProgress?.kill();
       panelTimeline?.kill();
-      quoteStage?.removeEventListener("pointerenter", pauseOnHover);
-      quoteStage?.removeEventListener("pointerleave", resumeAfterHover);
       document.removeEventListener("keydown", onKeydown);
       cleanups.forEach((cleanup) => cleanup());
       document.body.classList.remove("intro-lock", "experience-lock");
