@@ -739,6 +739,12 @@ button {
   text-wrap: balance;
 }
 
+.quote-hero[data-quote-length="long"] .quote-text {
+  max-width: 22ch;
+  font-size: clamp(34px, 3.75vw, 56px);
+  line-height: 1.18;
+}
+
 .quote-stage blockquote[lang="en"] .quote-text {
   max-width: 20ch;
   font-size: clamp(36px, 4vw, 60px);
@@ -1295,6 +1301,7 @@ button {
   .quote-stage blockquote { gap: 20px; }
   .quote-text,
   .quote-stage blockquote[lang="en"] .quote-text { max-width: 100%; font-size: clamp(28px, 8.7vw, 39px); line-height: 1.14; }
+  .quote-hero[data-quote-length="long"] .quote-text { font-size: clamp(23px, 7vw, 33px); line-height: 1.2; }
   .quote-attribution-mask { font-size: 10px; letter-spacing: 0.06em; }
   .quote-attribution-inner small { margin-top: 4px; font-size: 7px; line-height: 1.35; letter-spacing: 0.04em; }
 

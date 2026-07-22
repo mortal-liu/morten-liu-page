@@ -7,6 +7,20 @@ type PanelId = "story" | "favorites" | "pictures" | "thinking";
 
 const featuredQuotes = [
   {
+    text: "无论圣诞树是位于地下室房间里，还是无人光顾的街角小店，总会闪闪发光。",
+    source: "《苦尽柑来遇见你》",
+    author: "",
+    citation: "南山塔夜景",
+    lang: "zh-CN",
+    medium: "SERIES / STILL",
+    coverTitle: "苦尽柑来遇见你",
+    coverMeta: "辛苦了 · 南山塔夜景",
+    image: "/quotes/when-life-gives-you-tangerines.jpg",
+    imageAlt: "《苦尽柑来遇见你》南山塔夜景剧照",
+    imageOpacity: 0.44,
+    theme: "night",
+  },
+  {
     text: "如果你也来自小镇，成功从来不靠等待。",
     source: "《你给的恨》",
     author: "Asen艾志恒",
@@ -123,6 +137,7 @@ export default function Home() {
       if (coverIndex) coverIndex.textContent = `M—L / ${String(index + 1).padStart(3, "0")}`;
       quoteHero?.style.setProperty("--quote-image-opacity", String(quote.imageOpacity));
       quoteHero?.setAttribute("data-quote-theme", quote.theme);
+      quoteHero?.setAttribute("data-quote-length", quote.text.length > 30 ? "long" : "standard");
     };
 
     const prepareQuoteMedia = async (index: number, slot: number) => {
@@ -533,12 +548,18 @@ export default function Home() {
           <span className="topbar-status"><i /> ONLINE / 2026</span>
         </header>
 
-        <section className="quote-hero" id="home" aria-label="Morten 喜欢的句子" data-quote-theme={featuredQuotes[0].theme}>
+        <section
+          className="quote-hero"
+          id="home"
+          aria-label="Morten 喜欢的句子"
+          data-quote-theme={featuredQuotes[0].theme}
+          data-quote-length={featuredQuotes[0].text.length > 30 ? "long" : "standard"}
+        >
           <div className="quote-backdrop" aria-hidden="true">
             <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="0" src={featuredQuotes[0].image} alt="" />
             <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="1" src={featuredQuotes[1].image} alt="" />
           </div>
-          <div className="quote-heading clip-line"><p data-home-reveal><i /> WORDS I KEEP CLOSE</p><span data-home-reveal>SELECTED / 001—003</span></div>
+          <div className="quote-heading clip-line"><p data-home-reveal><i /> WORDS I KEEP CLOSE</p><span data-home-reveal>SELECTED / 001—004</span></div>
 
           <div className="quote-main">
             <div className="quote-left">
@@ -547,7 +568,7 @@ export default function Home() {
                   <div className="quote-text-mask clip-line"><p className="quote-text" data-home-reveal data-quote-text>{featuredQuotes[0].text}</p></div>
                   <footer className="quote-attribution-mask clip-line">
                     <span className="quote-attribution-inner" data-home-reveal>
-                      — <span data-quote-source>{featuredQuotes[0].source} · {featuredQuotes[0].author}</span>
+                      — <span data-quote-source>{[featuredQuotes[0].source, featuredQuotes[0].author].filter(Boolean).join(" · ")}</span>
                       <small data-quote-citation>{featuredQuotes[0].citation}</small>
                     </span>
                   </footer>
