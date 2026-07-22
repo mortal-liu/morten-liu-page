@@ -89,8 +89,8 @@ export default function Home() {
     const coverMedium = page.querySelector<HTMLElement>("[data-cover-medium]");
     const coverMeta = page.querySelector<HTMLElement>("[data-cover-meta]");
     const coverIndex = page.querySelector<HTMLElement>("[data-cover-index]");
-    const coverImage = page.querySelector<HTMLImageElement>("[data-cover-image]");
-    const backdropImage = page.querySelector<HTMLImageElement>("[data-quote-backdrop-image]");
+    const coverImages = Array.from(page.querySelectorAll<HTMLImageElement>("[data-cover-image]"));
+    const backdropImages = Array.from(page.querySelectorAll<HTMLImageElement>("[data-quote-backdrop-image]"));
     const quoteStage = page.querySelector<HTMLElement>("[data-quote-stage]");
 
     let introTimeline: gsap.core.Timeline | null = null;
@@ -102,6 +102,9 @@ export default function Home() {
     let activePanel: PanelId | null = null;
     let introIsExiting = false;
     let panelIsTransitioning = false;
+    let quoteIsTransitioning = false;
+    let mediaSlot = 0;
+    let disposed = false;
 
     document.body.classList.add("experience-lock");
 
@@ -118,19 +121,28 @@ export default function Home() {
       if (coverMedium) coverMedium.textContent = quote.medium;
       if (coverMeta) coverMeta.textContent = quote.coverMeta;
       if (coverIndex) coverIndex.textContent = `M—L / ${String(index + 1).padStart(3, "0")}`;
-      if (coverImage) {
-        coverImage.src = quote.image;
-        coverImage.alt = quote.imageAlt;
-      }
-      if (backdropImage) backdropImage.src = quote.image;
       quoteHero?.style.setProperty("--quote-image-opacity", String(quote.imageOpacity));
       quoteHero?.setAttribute("data-quote-theme", quote.theme);
     };
 
-    featuredQuotes.forEach((quote) => {
-      const image = new Image();
-      image.src = quote.image;
-    });
+    const prepareQuoteMedia = async (index: number, slot: number) => {
+      const quote = featuredQuotes[index];
+      const cover = coverImages[slot];
+      const backdrop = backdropImages[slot];
+
+      if (cover) {
+        cover.src = quote.image;
+        cover.alt = quote.imageAlt;
+      }
+      if (backdrop) backdrop.src = quote.image;
+
+      await Promise.all(
+        [cover, backdrop].filter((image): image is HTMLImageElement => Boolean(image)).map((image) => {
+          if (!image.decode) return Promise.resolve();
+          return image.decode().catch(() => undefined);
+        }),
+      );
+    };
 
     const scheduleQuote = () => {
       quoteProgress?.kill();
@@ -139,31 +151,67 @@ export default function Home() {
     };
 
     changeQuoteRef.current = (direction: number) => {
-      if (quoteTimeline?.isActive() || activePanel || panelIsTransitioning) return;
-      const nextIndex = (quoteIndex + direction + featuredQuotes.length) % featuredQuotes.length;
-      quoteProgress?.kill();
+      void (async () => {
+        if (quoteTimeline?.isActive() || quoteIsTransitioning || activePanel || panelIsTransitioning) return;
+        quoteIsTransitioning = true;
 
-      if (reducedMotion) {
-        quoteIndex = nextIndex;
-        writeQuote(quoteIndex);
-        return;
-      }
+        const nextIndex = (quoteIndex + direction + featuredQuotes.length) % featuredQuotes.length;
+        const nextSlot = mediaSlot === 0 ? 1 : 0;
+        quoteProgress?.kill();
+        await prepareQuoteMedia(nextIndex, nextSlot);
 
-      quoteTimeline = gsap
-        .timeline({ defaults: { ease: "power3.inOut" }, onComplete: scheduleQuote })
-        .to(".quote-text, .quote-attribution-inner", { y: direction > 0 ? -48 : 48, autoAlpha: 0, duration: 0.4, stagger: 0.035 })
-        .to(".quote-cover-art, .quote-cover-caption", { y: direction > 0 ? -26 : 26, rotateZ: direction > 0 ? -2 : 2, autoAlpha: 0, duration: 0.36 }, 0.04)
-        .to(".quote-backdrop-image", { scale: 1.07, autoAlpha: 0, duration: 0.36 }, 0)
-        .add(() => {
+        if (disposed || activePanel || panelIsTransitioning) {
+          quoteIsTransitioning = false;
+          return;
+        }
+
+        const outgoingCover = coverImages[mediaSlot];
+        const incomingCover = coverImages[nextSlot];
+        const outgoingBackdrop = backdropImages[mediaSlot];
+        const incomingBackdrop = backdropImages[nextSlot];
+
+        if (reducedMotion) {
           quoteIndex = nextIndex;
           writeQuote(quoteIndex);
-        })
-        .set(".quote-text, .quote-attribution-inner", { y: direction > 0 ? 54 : -54 })
-        .set(".quote-cover-art, .quote-cover-caption", { y: direction > 0 ? 30 : -30, rotateZ: direction > 0 ? 2 : -2 })
-        .set(".quote-backdrop-image", { scale: 1.08 })
-        .to(".quote-text, .quote-attribution-inner", { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.045, ease: "power4.out" })
-        .to(".quote-cover-art, .quote-cover-caption", { y: 0, rotateZ: 0, autoAlpha: 1, duration: 0.68, ease: "power4.out" }, "<0.04")
-        .to(".quote-backdrop-image", { scale: 1.02, autoAlpha: 1, duration: 0.96, ease: "power3.out" }, 0.44);
+          gsap.set([outgoingCover, outgoingBackdrop].filter(Boolean), { autoAlpha: 0 });
+          gsap.set([incomingCover, incomingBackdrop].filter(Boolean), { autoAlpha: 1, scale: 1 });
+          mediaSlot = nextSlot;
+          quoteIsTransitioning = false;
+          return;
+        }
+
+        quoteTimeline = gsap
+          .timeline({
+            defaults: { ease: "sine.inOut" },
+            onComplete: () => {
+              mediaSlot = nextSlot;
+              quoteIsTransitioning = false;
+              scheduleQuote();
+            },
+          })
+          .to(".quote-text, .quote-attribution-inner, .quote-cover-copy", {
+            y: direction > 0 ? -30 : 30,
+            autoAlpha: 0,
+            duration: 0.38,
+            stagger: 0.025,
+          }, 0)
+          .to(outgoingBackdrop, { scale: 1.045, autoAlpha: 0, duration: 0.62 }, 0)
+          .fromTo(incomingBackdrop, { scale: 1.08, autoAlpha: 0 }, { scale: 1.02, autoAlpha: 1, duration: 0.92 }, 0.1)
+          .to(outgoingCover, { scale: 1.025, autoAlpha: 0, duration: 0.54 }, 0.02)
+          .fromTo(incomingCover, { scale: 1.06, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.78, ease: "power2.out" }, 0.12)
+          .add(() => {
+            quoteIndex = nextIndex;
+            writeQuote(quoteIndex);
+          }, 0.38)
+          .set(".quote-text, .quote-attribution-inner, .quote-cover-copy", { y: direction > 0 ? 34 : -34 }, 0.4)
+          .to(".quote-text, .quote-attribution-inner, .quote-cover-copy", {
+            y: 0,
+            autoAlpha: 1,
+            duration: 0.72,
+            stagger: 0.045,
+            ease: "power4.out",
+          }, 0.42);
+      })();
     };
 
     const revealPanelImmediately = (id: PanelId) => {
@@ -408,6 +456,7 @@ export default function Home() {
     }
 
     return () => {
+      disposed = true;
       introTimeline?.kill();
       introExitTimeline?.kill();
       quoteTimeline?.kill();
@@ -486,7 +535,8 @@ export default function Home() {
 
         <section className="quote-hero" id="home" aria-label="Morten 喜欢的句子" data-quote-theme={featuredQuotes[0].theme}>
           <div className="quote-backdrop" aria-hidden="true">
-            <img className="quote-backdrop-image" data-quote-backdrop-image src={featuredQuotes[0].image} alt="" />
+            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="0" src={featuredQuotes[0].image} alt="" />
+            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="1" src={featuredQuotes[1].image} alt="" />
           </div>
           <div className="quote-heading clip-line"><p data-home-reveal><i /> WORDS I KEEP CLOSE</p><span data-home-reveal>SELECTED / 001—003</span></div>
 
@@ -515,11 +565,14 @@ export default function Home() {
 
             <figure className="quote-cover clip-line">
               <div className="quote-cover-art" data-home-reveal data-home-return>
-                <img className="quote-cover-image" data-cover-image src={featuredQuotes[0].image} alt={featuredQuotes[0].imageAlt} />
-                <span className="quote-cover-medium" data-cover-medium>{featuredQuotes[0].medium}</span>
-                <span className="quote-cover-index" data-cover-index>M—L / 001</span>
-                <strong data-cover-title>{featuredQuotes[0].coverTitle}</strong>
-                <span className="quote-cover-meta" data-cover-meta>{featuredQuotes[0].coverMeta}</span>
+                <img className="quote-cover-image" data-cover-image data-media-slot="0" src={featuredQuotes[0].image} alt={featuredQuotes[0].imageAlt} />
+                <img className="quote-cover-image" data-cover-image data-media-slot="1" src={featuredQuotes[1].image} alt={featuredQuotes[1].imageAlt} />
+                <div className="quote-cover-copy">
+                  <span className="quote-cover-medium" data-cover-medium>{featuredQuotes[0].medium}</span>
+                  <span className="quote-cover-index" data-cover-index>M—L / 001</span>
+                  <strong data-cover-title>{featuredQuotes[0].coverTitle}</strong>
+                  <span className="quote-cover-meta" data-cover-meta>{featuredQuotes[0].coverMeta}</span>
+                </div>
               </div>
               <figcaption className="quote-cover-caption" data-home-reveal>source object · cover archive</figcaption>
             </figure>

@@ -697,8 +697,11 @@ button {
   mask-image: linear-gradient(90deg, transparent 1%, rgba(0, 0, 0, 0.28) 27%, #000 67%, #000 100%);
   transform: scale(1.02);
   transform-origin: 70% 50%;
+  opacity: 0;
   will-change: transform, opacity;
 }
+
+.quote-backdrop-image[data-media-slot="0"] { opacity: 1; }
 
 .quote-main {
   display: grid;
@@ -809,11 +812,9 @@ button {
 
 .quote-cover-art {
   position: relative;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
   width: 100%;
   aspect-ratio: 0.78;
-  padding: 16px;
+  padding: 0;
   overflow: hidden;
   border: 1px solid rgba(224, 232, 218, 0.22);
   color: var(--paper);
@@ -847,6 +848,20 @@ button {
   object-fit: cover;
   object-position: center;
   filter: saturate(0.86) contrast(1.02) brightness(0.78);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.quote-cover-image[data-media-slot="0"] { opacity: 1; }
+
+.quote-cover-copy {
+  position: absolute;
+  z-index: 2;
+  inset: 16px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  pointer-events: none;
+  will-change: transform, opacity;
 }
 
 .quote-cover-medium,
@@ -866,8 +881,8 @@ button {
 
 .quote-cover-index {
   position: absolute;
-  top: 20px;
-  right: 18px;
+  top: 0;
+  right: 0;
   opacity: 0.56;
 }
 
@@ -1286,11 +1301,12 @@ button {
   .quote-tools > div { grid-template-columns: 27px 27px 40px; max-width: 112px; gap: 5px; }
   .quote-tools button { height: 27px; padding: 0 5px; font-size: 6px; }
   .quote-cover { width: 88px; }
-  .quote-cover-art { padding: 8px; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28); }
+  .quote-cover-art { padding: 0; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28); }
+  .quote-cover-copy { inset: 8px; }
   .quote-cover-art::after { inset: 4px; }
   .quote-cover-art strong { padding-bottom: 3px; font-size: 10px; }
   .quote-cover-medium, .quote-cover-index, .quote-cover-meta { font-size: 4px; letter-spacing: 0.08em; }
-  .quote-cover-index { top: 9px; right: 7px; }
+  .quote-cover-index { top: 0; right: 0; }
   .quote-cover-caption { display: none; }
   .quote-backdrop { inset: 36px -18px 128px; }
   .quote-backdrop::after { background: linear-gradient(90deg, var(--forest) 0%, rgba(17, 26, 20, 0.92) 36%, rgba(17, 26, 20, 0.28) 100%); }
