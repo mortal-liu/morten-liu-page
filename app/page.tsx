@@ -117,13 +117,79 @@ const favoriteSections: Array<{
   },
 ];
 
+const musicFavorites = [
+  {
+    title: "焦虑",
+    artist: "艾志恒Asen · Maikon Flocka Flame",
+    image: "/favorites/music/anxiety.jpg",
+  },
+  {
+    title: "小镇的孩子",
+    artist: "艾志恒Asen",
+    image: "/favorites/music/small-town-child.jpg",
+  },
+  {
+    title: "你给的恨",
+    artist: "艾志恒Asen · Maikon Flocka Flame",
+    image: "/favorites/music/the-hate-you-gave.jpg",
+  },
+];
+
+type ScreenKind = "电影" | "电视剧" | "动漫";
+
+const screenFavorites: Array<{ title: string; kind: ScreenKind; image: string }> = [
+  { title: "搏击俱乐部", kind: "电影", image: "/favorites/screen/fight-club.jpg" },
+  { title: "帕特森", kind: "电影", image: "/favorites/screen/paterson.jpg" },
+  { title: "苦尽柑来遇见你", kind: "电视剧", image: "/favorites/screen/tangerines.jpg" },
+  { title: "绝命毒师", kind: "电视剧", image: "/favorites/screen/breaking-bad.jpg" },
+  { title: "风骚律师", kind: "电视剧", image: "/favorites/screen/better-call-saul.jpg" },
+  { title: "进击的巨人", kind: "动漫", image: "/favorites/screen/attack-on-titan.jpg" },
+  { title: "我的青春恋爱物语果然有问题", kind: "动漫", image: "/favorites/screen/oregairu.jpg" },
+];
+
+const bookFavorites = [
+  { title: "活着", author: "余华", type: "小说", image: "/favorites/books/to-live.jpg" },
+  { title: "被讨厌的勇气", author: "岸见一郎 · 古贺史健", type: "心理 / 哲学", image: "/favorites/books/courage-to-be-disliked.jpg" },
+  { title: "小岛经济学", author: "彼得·希夫 · 安德鲁·希夫", type: "经济学", image: "/favorites/books/island-economics.jpg" },
+];
+
 export default function Home() {
   const [activeFavorite, setActiveFavorite] = useState<FavoriteId | null>(null);
+  const [favoriteView, setFavoriteView] = useState<FavoriteId | null>(null);
+  const [musicSelection, setMusicSelection] = useState(0);
+  const [screenKind, setScreenKind] = useState<ScreenKind>("电影");
+  const [screenSelection, setScreenSelection] = useState(0);
+  const [bookSelection, setBookSelection] = useState(0);
   const pageRef = useRef<HTMLElement>(null);
+  const favoriteEnterTimerRef = useRef<number | null>(null);
+  const favoriteViewRef = useRef<FavoriteId | null>(null);
   const skipIntroRef = useRef<() => void>(() => undefined);
   const changeQuoteRef = useRef<(direction: number) => void>(() => undefined);
   const openPanelRef = useRef<(panel: PanelId) => void>(() => undefined);
   const closePanelRef = useRef<() => void>(() => undefined);
+
+  useLayoutEffect(() => {
+    favoriteViewRef.current = favoriteView;
+  }, [favoriteView]);
+
+  const enterFavoriteSection = (id: FavoriteId) => {
+    if (favoriteEnterTimerRef.current) window.clearTimeout(favoriteEnterTimerRef.current);
+    setActiveFavorite(id);
+    favoriteEnterTimerRef.current = window.setTimeout(() => {
+      setFavoriteView(id);
+      favoriteEnterTimerRef.current = null;
+      window.setTimeout(() => pageRef.current?.querySelector<HTMLButtonElement>("[data-favorite-back]")?.focus(), 40);
+    }, 520);
+  };
+
+  const leaveFavoriteSection = () => {
+    const previousView = favoriteView;
+    setFavoriteView(null);
+    setActiveFavorite(null);
+    window.setTimeout(() => {
+      if (previousView) pageRef.current?.querySelector<HTMLButtonElement>(`[data-favorite-column="${previousView}"]`)?.focus();
+    }, 40);
+  };
 
   useLayoutEffect(() => {
     const page = pageRef.current;
@@ -340,6 +406,13 @@ export default function Home() {
       const target = page.querySelector<HTMLElement>(`[data-panel="${closingId}"]`);
       if (!target) return;
 
+      if (closingId === "favorites") {
+        if (favoriteEnterTimerRef.current) window.clearTimeout(favoriteEnterTimerRef.current);
+        favoriteEnterTimerRef.current = null;
+        setFavoriteView(null);
+        setActiveFavorite(null);
+      }
+
       if (reducedMotion) {
         gsap.set(target, { autoAlpha: 0, pointerEvents: "none" });
         target.setAttribute("aria-hidden", "true");
@@ -475,7 +548,10 @@ export default function Home() {
       const introVisible = intro && gsap.getProperty(intro, "visibility") !== "hidden";
       if (event.key === "Escape") {
         if (introVisible) skipIntroRef.current();
-        else if (activePanel) closePanelRef.current();
+        else if (activePanel === "favorites" && favoriteViewRef.current) {
+          setFavoriteView(null);
+          setActiveFavorite(null);
+        } else if (activePanel) closePanelRef.current();
       }
       if (!introVisible && !activePanel) {
         if (event.key === "ArrowLeft") changeQuoteRef.current(-1);
@@ -512,6 +588,7 @@ export default function Home() {
 
     return () => {
       disposed = true;
+      if (favoriteEnterTimerRef.current) window.clearTimeout(favoriteEnterTimerRef.current);
       introTimeline?.kill();
       introExitTimeline?.kill();
       quoteTimeline?.kill();
@@ -524,6 +601,8 @@ export default function Home() {
       document.body.classList.remove("intro-lock", "experience-lock");
     };
   }, []);
+
+  const filteredScreenFavorites = screenFavorites.filter((item) => item.kind === screenKind);
 
   return (
     <main ref={pageRef} className="site-shell">
@@ -676,17 +755,23 @@ export default function Home() {
       <section className="experience-panel panel-favorites" data-panel="favorites" aria-hidden="true">
         <PanelHeader index="02" title="FAVORITES" onClose={() => closePanelRef.current()} />
         <div className="panel-body favorites-body">
-          <div className="favorites-content">
-            <div className="favorite-categories" data-has-active={Boolean(activeFavorite)} aria-label="喜欢的内容分类">
+          <div className="favorites-content" data-favorite-view={favoriteView ?? "index"}>
+            <div
+              className="favorite-index-view"
+              data-visible={!favoriteView}
+              aria-hidden={Boolean(favoriteView)}
+            >
+              <div className="favorite-categories" data-has-active={Boolean(activeFavorite)} aria-label="喜欢的内容分类">
               {favoriteSections.map((section) => (
                 <button
                   className={`favorite-column favorite-column--${section.id}`}
                   data-active={activeFavorite === section.id}
+                  data-favorite-column={section.id}
                   data-panel-reveal
                   key={section.id}
                   type="button"
                   aria-pressed={activeFavorite === section.id}
-                  onClick={() => setActiveFavorite((current) => current === section.id ? null : section.id)}
+                  onClick={() => enterFavoriteSection(section.id)}
                 >
                   <span className="favorite-column-index">{section.index} / 03</span>
                   <span className="favorite-column-tree" aria-hidden="true">
@@ -703,6 +788,26 @@ export default function Home() {
                   <span className="favorite-column-action">展开预览 <i>↗</i></span>
                 </button>
               ))}
+              </div>
+            </div>
+
+            <div className="favorite-detail-view" data-visible={Boolean(favoriteView)} aria-hidden={!favoriteView}>
+              {favoriteView === "music" && (
+                <MusicArchive activeIndex={musicSelection} onBack={leaveFavoriteSection} onSelect={setMusicSelection} />
+              )}
+              {favoriteView === "screen" && (
+                <ScreenArchive
+                  activeIndex={screenSelection}
+                  items={filteredScreenFavorites}
+                  kind={screenKind}
+                  onBack={leaveFavoriteSection}
+                  onKindChange={(kind) => { setScreenKind(kind); setScreenSelection(0); }}
+                  onSelect={setScreenSelection}
+                />
+              )}
+              {favoriteView === "books" && (
+                <BookArchive activeIndex={bookSelection} onBack={leaveFavoriteSection} onSelect={setBookSelection} />
+              )}
             </div>
           </div>
         </div>
@@ -740,6 +845,164 @@ export default function Home() {
         </div>
       </section>
     </main>
+  );
+}
+
+function MusicArchive({
+  activeIndex,
+  onBack,
+  onSelect,
+}: {
+  activeIndex: number;
+  onBack: () => void;
+  onSelect: (index: number) => void;
+}) {
+  const activeItem = musicFavorites[activeIndex] ?? musicFavorites[0];
+
+  return (
+    <section className="favorite-archive music-archive" aria-label="音乐收藏">
+      <img className="music-ambient" key={activeItem.image} src={activeItem.image} alt="" aria-hidden="true" />
+      <ArchiveHeader index="01" label="MUSIC / LISTENING ROOM" onBack={onBack} />
+      <div className="music-room">
+        <div className="music-art-stage">
+          <span className="music-vinyl" aria-hidden="true"><i /></span>
+          <img key={activeItem.image} src={activeItem.image} alt={`${activeItem.title}封面`} />
+          <small>ASEN / PERSONAL ROTATION</small>
+        </div>
+
+        <div className="music-information">
+          <p>NOW SELECTED / {String(activeIndex + 1).padStart(2, "0")}</p>
+          <h3>{activeItem.title}</h3>
+          <span>{activeItem.artist}</span>
+          <AnnotationPlaceholder prompt="在这里写下它为什么会被你反复播放，或某一句留下来的歌词。" />
+        </div>
+
+        <ol className="music-track-list" aria-label="Asen 歌曲列表">
+          {musicFavorites.map((item, index) => (
+            <li key={item.title}>
+              <button type="button" data-selected={index === activeIndex} onClick={() => onSelect(index)}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <strong>{item.title}</strong>
+                <small>{index === activeIndex ? "SELECTED" : "PLAY NOTE"}</small>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+function ScreenArchive({
+  activeIndex,
+  items,
+  kind,
+  onBack,
+  onKindChange,
+  onSelect,
+}: {
+  activeIndex: number;
+  items: Array<{ title: string; kind: ScreenKind; image: string }>;
+  kind: ScreenKind;
+  onBack: () => void;
+  onKindChange: (kind: ScreenKind) => void;
+  onSelect: (index: number) => void;
+}) {
+  const activeItem = items[activeIndex] ?? items[0];
+  const globalIndex = screenFavorites.findIndex((item) => item.title === activeItem.title);
+
+  return (
+    <section className="favorite-archive screen-archive" aria-label="影视收藏">
+      <img className="screen-backdrop" key={activeItem.image} src={activeItem.image} alt="" aria-hidden="true" />
+      <span className="screen-shade" aria-hidden="true" />
+      <ArchiveHeader index="02" label="SCREEN / PRIVATE CINEMA" onBack={onBack} />
+
+      <div className="screen-stage">
+        <nav className="screen-kinds" aria-label="影视类型">
+          {(["电影", "电视剧", "动漫"] as ScreenKind[]).map((option) => (
+            <button key={option} type="button" data-selected={option === kind} onClick={() => onKindChange(option)}>{option}</button>
+          ))}
+        </nav>
+
+        <div className="screen-title-block">
+          <span>{String(globalIndex + 1).padStart(2, "0")} / {String(screenFavorites.length).padStart(2, "0")} · {activeItem.kind}</span>
+          <h3>{activeItem.title}</h3>
+          <AnnotationPlaceholder prompt="这里留给你的短评、喜欢的角色，或看完之后仍然没有散去的感受。" />
+        </div>
+
+        <div className="screen-poster-rail" aria-label={`${kind}海报列表`}>
+          {items.map((item, index) => (
+            <button type="button" data-selected={index === activeIndex} key={item.title} onClick={() => onSelect(index)}>
+              <img src={item.image} alt={`${item.title}海报`} />
+              <span><small>{String(index + 1).padStart(2, "0")}</small><strong>{item.title}</strong></span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BookArchive({
+  activeIndex,
+  onBack,
+  onSelect,
+}: {
+  activeIndex: number;
+  onBack: () => void;
+  onSelect: (index: number) => void;
+}) {
+  const activeItem = bookFavorites[activeIndex] ?? bookFavorites[0];
+
+  return (
+    <section className="favorite-archive book-archive" aria-label="书籍收藏">
+      <ArchiveHeader index="03" label="BOOKS / READING FILE" onBack={onBack} />
+      <div className="book-desk">
+        <nav className="book-index" aria-label="书籍目录">
+          <p>READING INDEX / 003</p>
+          {bookFavorites.map((item, index) => (
+            <button type="button" data-selected={index === activeIndex} key={item.title} onClick={() => onSelect(index)}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <strong>{item.title}</strong>
+              <small>{item.type}</small>
+            </button>
+          ))}
+        </nav>
+
+        <div className="book-cover-stage">
+          <span aria-hidden="true" />
+          <img key={activeItem.image} src={activeItem.image} alt={`${activeItem.title}封面`} />
+          <small>PRIVATE COPY / {String(activeIndex + 1).padStart(3, "0")}</small>
+        </div>
+
+        <article className="book-reading-note">
+          <p>{activeItem.type} / SELECTED BOOK</p>
+          <h3>{activeItem.title}</h3>
+          <span>{activeItem.author}</span>
+          <AnnotationPlaceholder prompt="在这里整理你的批注：喜欢的段落、读完后的判断，以及未来重读时想重新确认的问题。" />
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function ArchiveHeader({ index, label, onBack }: { index: string; label: string; onBack: () => void }) {
+  return (
+    <header className="favorite-archive-header">
+      <button type="button" data-favorite-back onClick={onBack}><span>←</span> FAVORITES</button>
+      <p>{index} / 03 · {label}</p>
+      <span>PERSONAL SELECTION</span>
+    </header>
+  );
+}
+
+function AnnotationPlaceholder({ prompt }: { prompt: string }) {
+  return (
+    <div className="annotation-placeholder">
+      <span>MY NOTE / 待填写</span>
+      <p>{prompt}</p>
+      <i aria-hidden="true" />
+    </div>
   );
 }
 
