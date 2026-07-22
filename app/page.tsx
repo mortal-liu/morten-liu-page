@@ -7,16 +7,17 @@ type PanelId = "story" | "favorites" | "pictures" | "thinking";
 
 const featuredQuotes = [
   {
-    text: "无论圣诞树是位于地下室房间里，还是无人光顾的街角小店，总会闪闪发光。",
+    text: "圣诞树无论是位于地下室房间里，还是无人光顾的街角小店，总会闪闪发光。",
     source: "《苦尽柑来遇见你》",
     author: "",
     citation: "南山塔夜景",
     lang: "zh-CN",
-    medium: "SERIES / STILL",
+    medium: "SERIES / POSTER",
     coverTitle: "苦尽柑来遇见你",
-    coverMeta: "辛苦了 · 南山塔夜景",
-    image: "/quotes/when-life-gives-you-tangerines.jpg",
-    imageAlt: "《苦尽柑来遇见你》南山塔夜景剧照",
+    coverMeta: "苦尽柑来遇见你 · POSTER",
+    image: "/quotes/when-life-gives-you-tangerines-poster.jpg",
+    backdropImage: "/quotes/when-life-gives-you-tangerines.jpg",
+    imageAlt: "《苦尽柑来遇见你》竖版海报",
     imageOpacity: 0.44,
     theme: "night",
   },
@@ -30,6 +31,7 @@ const featuredQuotes = [
     coverTitle: "在雨后醒来",
     coverMeta: "ASEN · ALBUM",
     image: "/quotes/after-rain.jpg",
+    backdropImage: "/quotes/after-rain.jpg",
     imageAlt: "Asen《在雨后醒来》专辑封面",
     imageOpacity: 0.34,
     theme: "clay",
@@ -44,6 +46,7 @@ const featuredQuotes = [
     coverTitle: "狂人日记",
     coverMeta: "鲁迅 · 1918",
     image: "/quotes/madmans-diary.jpg",
+    backdropImage: "/quotes/madmans-diary.jpg",
     imageAlt: "鲁迅《狂人日记》书封",
     imageOpacity: 0.2,
     theme: "moss",
@@ -58,6 +61,7 @@ const featuredQuotes = [
     coverTitle: "C. G. JUNG LETTERS",
     coverMeta: "VOL. 1 · 1906—1950",
     image: "/quotes/jung-letters-vol-1.jpg",
+    backdropImage: "/quotes/jung-letters-vol-1.jpg",
     imageAlt: "C. G. Jung Letters, Volume 1 书封",
     imageOpacity: 0.34,
     theme: "ink",
@@ -149,7 +153,7 @@ export default function Home() {
         cover.src = quote.image;
         cover.alt = quote.imageAlt;
       }
-      if (backdrop) backdrop.src = quote.image;
+      if (backdrop) backdrop.src = quote.backdropImage;
 
       await Promise.all(
         [cover, backdrop].filter((image): image is HTMLImageElement => Boolean(image)).map((image) => {
@@ -556,8 +560,8 @@ export default function Home() {
           data-quote-length={featuredQuotes[0].text.length > 30 ? "long" : "standard"}
         >
           <div className="quote-backdrop" aria-hidden="true">
-            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="0" src={featuredQuotes[0].image} alt="" />
-            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="1" src={featuredQuotes[1].image} alt="" />
+            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="0" src={featuredQuotes[0].backdropImage} alt="" />
+            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="1" src={featuredQuotes[1].backdropImage} alt="" />
           </div>
           <div className="quote-heading clip-line"><p data-home-reveal><i /> WORDS I KEEP CLOSE</p><span data-home-reveal>SELECTED / 001—004</span></div>
 
