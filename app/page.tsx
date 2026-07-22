@@ -10,30 +10,42 @@ const featuredQuotes = [
     text: "如果你也来自小镇，成功从来不靠等待。",
     source: "《你给的恨》",
     author: "Asen艾志恒",
+    citation: "专辑《在雨后醒来》",
     lang: "zh-CN",
-    medium: "MUSIC / SINGLE",
-    coverTitle: "你给的恨",
-    coverMeta: "ASEN · 2025",
+    medium: "MUSIC / ALBUM",
+    coverTitle: "在雨后醒来",
+    coverMeta: "ASEN · ALBUM",
+    image: "/quotes/after-rain.jpg",
+    imageAlt: "Asen《在雨后醒来》专辑封面",
+    imageOpacity: 0.34,
     theme: "clay",
   },
   {
     text: "从来如此，便对么？",
     source: "《狂人日记》",
     author: "鲁迅",
+    citation: "收录于《呐喊》",
     lang: "zh-CN",
     medium: "BOOK / LITERATURE",
     coverTitle: "狂人日记",
     coverMeta: "鲁迅 · 1918",
+    image: "/quotes/madmans-diary.jpg",
+    imageAlt: "鲁迅《狂人日记》书封",
+    imageOpacity: 0.2,
     theme: "moss",
   },
   {
-    text: "Who looks outside, dreams; who looks inside, awake.",
-    source: "",
-    author: "荣格",
+    text: "Who looks outside, dreams; who looks inside, awakes.",
+    source: "Carl Gustav Jung",
+    author: "",
+    citation: "Letter (1916), published in C. G. Jung Letters, Vol. 1",
     lang: "en",
-    medium: "WORDS / PSYCHOLOGY",
-    coverTitle: "LOOK WITHIN",
-    coverMeta: "C. G. JUNG",
+    medium: "BOOK / LETTERS",
+    coverTitle: "C. G. JUNG LETTERS",
+    coverMeta: "VOL. 1 · 1906—1950",
+    image: "/quotes/jung-letters-vol-1.jpg",
+    imageAlt: "C. G. Jung Letters, Volume 1 书封",
+    imageOpacity: 0.34,
     theme: "ink",
   },
 ];
@@ -71,10 +83,14 @@ export default function Home() {
     const quoteHero = page.querySelector<HTMLElement>(".quote-hero");
     const quoteText = page.querySelector<HTMLElement>("[data-quote-text]");
     const quoteSource = page.querySelector<HTMLElement>("[data-quote-source]");
+    const quoteCitation = page.querySelector<HTMLElement>("[data-quote-citation]");
     const quoteCounter = page.querySelector<HTMLElement>("[data-quote-counter]");
     const coverTitle = page.querySelector<HTMLElement>("[data-cover-title]");
     const coverMedium = page.querySelector<HTMLElement>("[data-cover-medium]");
     const coverMeta = page.querySelector<HTMLElement>("[data-cover-meta]");
+    const coverIndex = page.querySelector<HTMLElement>("[data-cover-index]");
+    const coverImage = page.querySelector<HTMLImageElement>("[data-cover-image]");
+    const backdropImage = page.querySelector<HTMLImageElement>("[data-quote-backdrop-image]");
     const quoteStage = page.querySelector<HTMLElement>("[data-quote-stage]");
 
     let introTimeline: gsap.core.Timeline | null = null;
@@ -95,13 +111,26 @@ export default function Home() {
         quoteText.textContent = quote.text;
         quoteText.closest("blockquote")?.setAttribute("lang", quote.lang);
       }
-      if (quoteSource) quoteSource.textContent = quote.source ? `${quote.source} · ${quote.author}` : quote.author;
+      if (quoteSource) quoteSource.textContent = [quote.source, quote.author].filter(Boolean).join(" · ");
+      if (quoteCitation) quoteCitation.textContent = quote.citation;
       if (quoteCounter) quoteCounter.textContent = `${String(index + 1).padStart(2, "0")} / ${String(featuredQuotes.length).padStart(2, "0")}`;
       if (coverTitle) coverTitle.textContent = quote.coverTitle;
       if (coverMedium) coverMedium.textContent = quote.medium;
       if (coverMeta) coverMeta.textContent = quote.coverMeta;
+      if (coverIndex) coverIndex.textContent = `M—L / ${String(index + 1).padStart(3, "0")}`;
+      if (coverImage) {
+        coverImage.src = quote.image;
+        coverImage.alt = quote.imageAlt;
+      }
+      if (backdropImage) backdropImage.src = quote.image;
+      quoteHero?.style.setProperty("--quote-image-opacity", String(quote.imageOpacity));
       quoteHero?.setAttribute("data-quote-theme", quote.theme);
     };
+
+    featuredQuotes.forEach((quote) => {
+      const image = new Image();
+      image.src = quote.image;
+    });
 
     const scheduleQuote = () => {
       quoteProgress?.kill();
@@ -124,14 +153,17 @@ export default function Home() {
         .timeline({ defaults: { ease: "power3.inOut" }, onComplete: scheduleQuote })
         .to(".quote-text, .quote-attribution-inner", { y: direction > 0 ? -48 : 48, autoAlpha: 0, duration: 0.4, stagger: 0.035 })
         .to(".quote-cover-art, .quote-cover-caption", { y: direction > 0 ? -26 : 26, rotateZ: direction > 0 ? -2 : 2, autoAlpha: 0, duration: 0.36 }, 0.04)
+        .to(".quote-backdrop-image", { scale: 1.07, autoAlpha: 0, duration: 0.36 }, 0)
         .add(() => {
           quoteIndex = nextIndex;
           writeQuote(quoteIndex);
         })
         .set(".quote-text, .quote-attribution-inner", { y: direction > 0 ? 54 : -54 })
         .set(".quote-cover-art, .quote-cover-caption", { y: direction > 0 ? 30 : -30, rotateZ: direction > 0 ? 2 : -2 })
+        .set(".quote-backdrop-image", { scale: 1.08 })
         .to(".quote-text, .quote-attribution-inner", { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.045, ease: "power4.out" })
-        .to(".quote-cover-art, .quote-cover-caption", { y: 0, rotateZ: 0, autoAlpha: 1, duration: 0.68, ease: "power4.out" }, "<0.04");
+        .to(".quote-cover-art, .quote-cover-caption", { y: 0, rotateZ: 0, autoAlpha: 1, duration: 0.68, ease: "power4.out" }, "<0.04")
+        .to(".quote-backdrop-image", { scale: 1.02, autoAlpha: 1, duration: 0.96, ease: "power3.out" }, 0.44);
     };
 
     const revealPanelImmediately = (id: PanelId) => {
@@ -453,7 +485,9 @@ export default function Home() {
         </header>
 
         <section className="quote-hero" id="home" aria-label="Morten 喜欢的句子" data-quote-theme={featuredQuotes[0].theme}>
-          <div className="quote-backdrop" aria-hidden="true"><span /></div>
+          <div className="quote-backdrop" aria-hidden="true">
+            <img className="quote-backdrop-image" data-quote-backdrop-image src={featuredQuotes[0].image} alt="" />
+          </div>
           <div className="quote-heading clip-line"><p data-home-reveal><i /> WORDS I KEEP CLOSE</p><span data-home-reveal>SELECTED / 001—003</span></div>
 
           <div className="quote-main">
@@ -461,7 +495,12 @@ export default function Home() {
               <div className="quote-stage" data-quote-stage>
                 <blockquote lang={featuredQuotes[0].lang}>
                   <div className="quote-text-mask clip-line"><p className="quote-text" data-home-reveal data-quote-text>{featuredQuotes[0].text}</p></div>
-                  <footer className="quote-attribution-mask clip-line"><span className="quote-attribution-inner" data-home-reveal>— <span data-quote-source>{featuredQuotes[0].source} · {featuredQuotes[0].author}</span></span></footer>
+                  <footer className="quote-attribution-mask clip-line">
+                    <span className="quote-attribution-inner" data-home-reveal>
+                      — <span data-quote-source>{featuredQuotes[0].source} · {featuredQuotes[0].author}</span>
+                      <small data-quote-citation>{featuredQuotes[0].citation}</small>
+                    </span>
+                  </footer>
                 </blockquote>
               </div>
 
@@ -476,11 +515,11 @@ export default function Home() {
 
             <figure className="quote-cover clip-line">
               <div className="quote-cover-art" data-home-reveal data-home-return>
+                <img className="quote-cover-image" data-cover-image src={featuredQuotes[0].image} alt={featuredQuotes[0].imageAlt} />
                 <span className="quote-cover-medium" data-cover-medium>{featuredQuotes[0].medium}</span>
-                <span className="quote-cover-index">M—L / 001</span>
+                <span className="quote-cover-index" data-cover-index>M—L / 001</span>
                 <strong data-cover-title>{featuredQuotes[0].coverTitle}</strong>
                 <span className="quote-cover-meta" data-cover-meta>{featuredQuotes[0].coverMeta}</span>
-                <i aria-hidden="true" />
               </div>
               <figcaption className="quote-cover-caption" data-home-reveal>source object · cover archive</figcaption>
             </figure>

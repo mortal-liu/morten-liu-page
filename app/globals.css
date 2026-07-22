@@ -672,26 +672,33 @@ button {
 .quote-backdrop {
   position: absolute;
   z-index: -1;
-  top: 50%;
-  right: -10vw;
-  width: min(45vw, 670px);
-  aspect-ratio: 0.78;
-  opacity: 0.18;
-  transform: translateY(-48%) rotate(7deg);
-  transition: color 550ms ease, background 550ms ease;
+  inset: 46px 0 108px;
+  overflow: hidden;
+  opacity: var(--quote-image-opacity, 0.34);
+  pointer-events: none;
+  transition: opacity 550ms ease;
 }
 
-.quote-backdrop span {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: 1px solid currentColor;
-  background: repeating-linear-gradient(135deg, transparent 0 28px, currentColor 29px 30px);
+.quote-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--forest) 0%, rgba(17, 26, 20, 0.92) 17%, rgba(17, 26, 20, 0.34) 57%, rgba(17, 26, 20, 0.12) 100%);
 }
 
-.quote-hero[data-quote-theme="clay"] .quote-backdrop { color: #a5553f; background: rgba(165, 85, 63, 0.28); }
-.quote-hero[data-quote-theme="moss"] .quote-backdrop { color: #718168; background: rgba(113, 129, 104, 0.26); }
-.quote-hero[data-quote-theme="ink"] .quote-backdrop { color: #536657; background: rgba(83, 102, 87, 0.24); }
+.quote-backdrop-image {
+  position: absolute;
+  inset: -3%;
+  width: 106%;
+  height: 106%;
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(0.78) contrast(0.94) brightness(0.68);
+  mask-image: linear-gradient(90deg, transparent 1%, rgba(0, 0, 0, 0.28) 27%, #000 67%, #000 100%);
+  transform: scale(1.02);
+  transform-origin: 70% 50%;
+  will-change: transform, opacity;
+}
 
 .quote-main {
   display: grid;
@@ -746,6 +753,15 @@ button {
 
 .quote-attribution-inner { display: block; }
 
+.quote-attribution-inner small {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink-faint);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
 .quote-tools > div {
   display: grid;
   grid-template-columns: 32px 32px 48px;
@@ -797,37 +813,41 @@ button {
   grid-template-rows: auto 1fr auto;
   width: 100%;
   aspect-ratio: 0.78;
-  padding: 20px;
+  padding: 16px;
   overflow: hidden;
   border: 1px solid rgba(224, 232, 218, 0.22);
   color: var(--paper);
   box-shadow: 0 26px 58px rgba(0, 0, 0, 0.36);
-  transition: background 550ms ease;
+  background: var(--forest-deep);
 }
 
 .quote-cover-art::before {
   content: "";
   position: absolute;
+  z-index: 1;
   inset: 0;
-  opacity: 0.5;
-  background: repeating-linear-gradient(135deg, transparent 0 23px, rgba(243, 238, 226, 0.18) 24px 25px);
+  background: linear-gradient(180deg, rgba(8, 14, 10, 0.48) 0%, transparent 31%, transparent 55%, rgba(8, 14, 10, 0.78) 100%);
 }
 
 .quote-cover-art::after {
   content: "";
   position: absolute;
-  right: -40%;
-  bottom: -31%;
-  width: 98%;
-  aspect-ratio: 1;
-  border: 1px solid rgba(243, 238, 226, 0.38);
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 42px rgba(243, 238, 226, 0.04);
+  z-index: 1;
+  inset: 7px;
+  border: 1px solid rgba(243, 238, 226, 0.18);
+  pointer-events: none;
 }
 
-.quote-hero[data-quote-theme="clay"] .quote-cover-art { background: #9c503e; }
-.quote-hero[data-quote-theme="moss"] .quote-cover-art { background: #5d6b55; }
-.quote-hero[data-quote-theme="ink"] .quote-cover-art { background: #263229; }
+.quote-cover-image {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: saturate(0.86) contrast(1.02) brightness(0.78);
+}
 
 .quote-cover-medium,
 .quote-cover-index,
@@ -852,25 +872,15 @@ button {
 }
 
 .quote-cover-art strong {
-  align-self: center;
-  max-width: 7ch;
-  font: 400 clamp(30px, 3vw, 45px) / 0.97 Georgia, "Times New Roman", "Songti SC", serif;
-  letter-spacing: -0.045em;
+  align-self: end;
+  max-width: 12ch;
+  padding-bottom: 7px;
+  font: 400 clamp(17px, 1.75vw, 27px) / 1 Georgia, "Times New Roman", "Songti SC", serif;
+  letter-spacing: -0.025em;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.7);
 }
 
-.quote-cover-meta { align-self: end; opacity: 0.62; }
-
-.quote-cover-art > i {
-  position: absolute;
-  z-index: 2;
-  top: 50%;
-  right: 18px;
-  width: 7px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--paper);
-  box-shadow: 0 0 0 6px rgba(243, 238, 226, 0.11);
-}
+.quote-cover-meta { align-self: end; opacity: 0.72; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75); }
 
 .quote-cover-caption {
   display: block;
@@ -1271,16 +1281,19 @@ button {
   .quote-text,
   .quote-stage blockquote[lang="en"] .quote-text { max-width: 100%; font-size: clamp(28px, 8.7vw, 39px); line-height: 1.14; }
   .quote-attribution-mask { font-size: 10px; letter-spacing: 0.06em; }
+  .quote-attribution-inner small { margin-top: 4px; font-size: 7px; line-height: 1.35; letter-spacing: 0.04em; }
 
   .quote-tools > div { grid-template-columns: 27px 27px 40px; max-width: 112px; gap: 5px; }
   .quote-tools button { height: 27px; padding: 0 5px; font-size: 6px; }
   .quote-cover { width: 88px; }
-  .quote-cover-art { padding: 9px; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28); }
-  .quote-cover-art strong { font-size: 18px; }
+  .quote-cover-art { padding: 8px; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28); }
+  .quote-cover-art::after { inset: 4px; }
+  .quote-cover-art strong { padding-bottom: 3px; font-size: 10px; }
   .quote-cover-medium, .quote-cover-index, .quote-cover-meta { font-size: 4px; letter-spacing: 0.08em; }
   .quote-cover-index { top: 9px; right: 7px; }
-  .quote-cover-art > i, .quote-cover-caption { display: none; }
-  .quote-backdrop { right: -70vw; width: 145vw; opacity: 0.1; }
+  .quote-cover-caption { display: none; }
+  .quote-backdrop { inset: 36px -18px 128px; }
+  .quote-backdrop::after { background: linear-gradient(90deg, var(--forest) 0%, rgba(17, 26, 20, 0.92) 36%, rgba(17, 26, 20, 0.28) 100%); }
 
   .portal-nav {
     grid-template-columns: repeat(2, 1fr);
