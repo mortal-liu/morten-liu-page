@@ -1055,6 +1055,21 @@ button {
 .panel-pictures { --portal-color: #314b3b; color: var(--ink); background: #122019; }
 .panel-thinking { --portal-color: #1b2b20; color: var(--ink); background: #101914; }
 
+.panel-favorites[data-detail="true"] {
+  grid-template-rows: 0 minmax(0, 1fr);
+}
+
+.panel-favorites[data-detail="true"] > .panel-header {
+  height: 0;
+  min-height: 0;
+  padding-block: 0;
+  overflow: hidden;
+  border: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .panel-header {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -1123,11 +1138,6 @@ button {
 .panel-favorites .panel-header button:focus-visible span,
 .panel-pictures .panel-header button:hover span,
 .panel-pictures .panel-header button:focus-visible span { color: var(--forest-deep); background: var(--ink); }
-
-.panel-header button[data-mode="back"]:hover span,
-.panel-header button[data-mode="back"]:focus-visible span {
-  transform: translateX(-3px);
-}
 
 .panel-header button:disabled {
   cursor: default;
@@ -1448,6 +1458,76 @@ button {
   animation: favorite-detail-out 360ms cubic-bezier(0.4, 0, 0.6, 1) both;
 }
 
+.favorite-immersive-header {
+  position: absolute;
+  z-index: 12;
+  inset: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(20px, 3.2vh, 34px) clamp(22px, 4.4vw, 70px);
+  color: var(--paper);
+  pointer-events: none;
+}
+
+.favorite-immersive-header[data-tone="dark"] { color: #172019; }
+
+.favorite-immersive-header p {
+  margin: 0;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-shadow: 0 1px 18px rgba(0, 0, 0, 0.28);
+}
+
+.favorite-immersive-header p span { opacity: 0.58; }
+
+.favorite-immersive-header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.favorite-immersive-header button strong { font: inherit; }
+
+.favorite-immersive-header button > span {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  margin-left: 5px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, currentColor 52%, transparent);
+  border-radius: 50%;
+  font: 400 13px/1 Georgia, serif;
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1), background 280ms ease, color 280ms ease;
+}
+
+.favorite-immersive-header button:hover > span,
+.favorite-immersive-header button:focus-visible > span {
+  color: #172019;
+  background: var(--paper);
+  transform: translateX(-4px);
+}
+
+.favorite-immersive-header[data-tone="dark"] button:hover > span,
+.favorite-immersive-header[data-tone="dark"] button:focus-visible > span {
+  color: #d8d2c2;
+  background: #172019;
+}
+
+.favorite-immersive-header button:disabled {
+  cursor: default;
+  opacity: 0.46;
+}
+
 @keyframes favorite-detail-in {
   from { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.992); }
   to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
@@ -1549,6 +1629,10 @@ button {
   gap: clamp(34px, 5vw, 84px);
   min-height: 0;
   padding: clamp(28px, 5vh, 58px) clamp(28px, 5vw, 78px);
+}
+
+.panel-favorites[data-detail="true"] .music-room {
+  padding-top: clamp(84px, 10vh, 112px);
 }
 
 .music-art-stage {
@@ -1731,6 +1815,10 @@ button {
   padding: clamp(22px, 3.6vh, 38px) clamp(26px, 5vw, 78px) 24px;
 }
 
+.panel-favorites[data-detail="true"] .screen-stage {
+  padding-top: clamp(78px, 9vh, 102px);
+}
+
 .screen-kinds { display: flex; gap: 8px; }
 .screen-kinds button {
   padding: 8px 13px;
@@ -1849,6 +1937,10 @@ button {
   gap: clamp(30px, 5vw, 82px);
   min-height: 0;
   padding: clamp(28px, 5vh, 62px) clamp(28px, 5vw, 78px);
+}
+
+.panel-favorites[data-detail="true"] .book-desk {
+  padding-top: clamp(84px, 10vh, 112px);
 }
 
 .book-index { align-self: stretch; display: grid; align-content: center; }
@@ -2115,6 +2207,7 @@ button {
   .story-placeholder p { font-size: 17px; }
 
   .panel-favorites { overflow: hidden; }
+  .panel-favorites[data-detail="true"] { grid-template-rows: 0 minmax(0, 1fr); }
   .favorites-body { min-height: 0; padding: 0; }
   .favorites-content { height: 100%; padding: 0; }
   .favorite-categories { height: 100%; flex-direction: column; }
@@ -2142,6 +2235,11 @@ button {
   .favorite-categories[data-has-active="true"] .favorite-column[data-active="true"] { flex: 1.56 1 0; }
 
   .favorite-archive { grid-template-rows: minmax(0, 1fr); }
+  .favorite-immersive-header { padding: 16px 18px; }
+  .favorite-immersive-header p { font-size: 5px; letter-spacing: 0.12em; }
+  .favorite-immersive-header button { gap: 5px; font-size: 6px; }
+  .favorite-immersive-header button strong { display: none; }
+  .favorite-immersive-header button > span { width: 26px; height: 26px; margin-left: 3px; }
   .annotation-placeholder { gap: 6px; margin-top: 13px; padding: 10px 0; }
   .annotation-placeholder p { font-size: 9px; line-height: 1.5; }
 
@@ -2152,6 +2250,7 @@ button {
     gap: 14px 18px;
     padding: 18px;
   }
+  .panel-favorites[data-detail="true"] .music-room { padding-top: 62px; }
   .music-art-stage { width: 100%; }
   .music-vinyl { right: -15%; }
   .music-art-stage > small { margin-top: 8px; font-size: 4px; }
@@ -2170,6 +2269,7 @@ button {
   .music-track-list button small { display: block; font-size: 4px; }
 
   .screen-stage { padding: 15px 18px 12px; }
+  .panel-favorites[data-detail="true"] .screen-stage { padding-top: 58px; }
   .screen-kinds button { padding: 6px 10px; font-size: 6px; }
   .screen-title-block { width: 100%; padding: 12px 0; }
   .screen-title-block > span { font-size: 5px; }
@@ -2190,6 +2290,7 @@ button {
     gap: 18px;
     padding: 16px 18px 20px;
   }
+  .panel-favorites[data-detail="true"] .book-desk { padding-top: 60px; }
   .book-index { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); align-self: start; }
   .book-index > p { display: none; }
   .book-index button { grid-template-columns: 20px minmax(0, 1fr); gap: 3px 5px; padding: 9px 6px; border-right: 1px solid rgba(23, 32, 25, 0.18); }

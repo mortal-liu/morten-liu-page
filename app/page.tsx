@@ -796,15 +796,13 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="experience-panel panel-favorites" data-panel="favorites" aria-hidden="true">
-        <PanelHeader
-          index="02"
-          title="FAVORITES"
-          detailTitle={favoriteView?.toUpperCase()}
-          isTransitioning={favoriteIsLeaving}
-          onBack={leaveFavoriteSection}
-          onClose={() => closePanelRef.current()}
-        />
+      <section
+        className="experience-panel panel-favorites"
+        data-detail={Boolean(favoriteView)}
+        data-panel="favorites"
+        aria-hidden="true"
+      >
+        <PanelHeader index="02" title="FAVORITES" onClose={() => closePanelRef.current()} />
         <div className="panel-body favorites-body">
           <div className="favorites-content" data-favorite-view={favoriteView ?? "index"}>
             <div
@@ -848,6 +846,14 @@ export default function Home() {
               data-visible={Boolean(favoriteView)}
               aria-hidden={!favoriteView}
             >
+              {favoriteView && (
+                <FavoriteImmersiveHeader
+                  title={favoriteView.toUpperCase()}
+                  tone={favoriteView === "books" ? "dark" : "light"}
+                  isTransitioning={favoriteIsLeaving}
+                  onBack={leaveFavoriteSection}
+                />
+              )}
               {favoriteView === "music" && (
                 <MusicArchive activeIndex={musicSelection} onSelect={setMusicSelection} />
               )}
@@ -1070,38 +1076,36 @@ function AnnotationPlaceholder({ prompt }: { prompt: string }) {
   );
 }
 
-function PanelHeader({
-  index,
+function FavoriteImmersiveHeader({
   title,
-  detailTitle,
-  isTransitioning = false,
+  tone,
+  isTransitioning,
   onBack,
-  onClose,
 }: {
-  index: string;
   title: string;
-  detailTitle?: string;
-  isTransitioning?: boolean;
-  onBack?: () => void;
-  onClose: () => void;
+  tone: "light" | "dark";
+  isTransitioning: boolean;
+  onBack: () => void;
 }) {
-  const isDetail = Boolean(detailTitle && onBack);
+  return (
+    <header className="favorite-immersive-header" data-tone={tone}>
+      <p><span>02 / 04</span> · FAVORITES / {title}</p>
+      <button type="button" disabled={isTransitioning} aria-label="返回 Favorites" onClick={onBack}>
+        返回 <strong>FAVORITES</strong><span aria-hidden="true">←</span>
+      </button>
+    </header>
+  );
+}
 
+function PanelHeader({ index, title, onClose }: { index: string; title: string; onClose: () => void }) {
   return (
     <header className="panel-header">
       <a href="#home" aria-label="Morten Liu 主页" onClick={(event) => { event.preventDefault(); onClose(); }}>
         <span className="panel-monogram">M</span><span>MORTEN—LIU</span>
       </a>
-      <p>{index} / 04 · {title}{detailTitle ? ` / ${detailTitle}` : ""}</p>
-      <button
-        type="button"
-        data-mode={isDetail ? "back" : "close"}
-        data-panel-close={isDetail ? undefined : ""}
-        disabled={isTransitioning}
-        aria-label={isDetail ? "返回 Favorites" : "关闭并返回主页"}
-        onClick={isDetail ? onBack : onClose}
-      >
-        {isDetail ? "返回 FAVORITES" : "关闭"} <span aria-hidden="true">{isDetail ? "←" : "×"}</span>
+      <p>{index} / 04 · {title}</p>
+      <button type="button" data-panel-close aria-label="关闭并返回主页" onClick={onClose}>
+        关闭 <span aria-hidden="true">×</span>
       </button>
     </header>
   );
