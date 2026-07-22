@@ -227,6 +227,7 @@ export default function Home() {
     let disposed = false;
 
     document.body.classList.add("experience-lock");
+    page.querySelectorAll<HTMLElement>("[data-panel]").forEach((panel) => panel.setAttribute("inert", ""));
 
     const writeQuote = (index: number) => {
       const quote = featuredQuotes[index];
@@ -341,6 +342,7 @@ export default function Home() {
       gsap.set(homeScreen, { autoAlpha: 0, pointerEvents: "none" });
       gsap.set(target, { autoAlpha: 1, pointerEvents: "auto" });
       target.setAttribute("aria-hidden", "false");
+      target.removeAttribute("inert");
       activePanel = id;
     };
 
@@ -390,6 +392,7 @@ export default function Home() {
           gsap.set(homeScreen, { autoAlpha: 0, pointerEvents: "none" });
           gsap.set(target, { autoAlpha: 1, pointerEvents: "auto" });
           target.setAttribute("aria-hidden", "false");
+          target.removeAttribute("inert");
           activePanel = id;
         }, 0.88)
         .to(transitionLabel, { yPercent: -120, duration: 0.42 }, 0.92)
@@ -416,6 +419,7 @@ export default function Home() {
       if (reducedMotion) {
         gsap.set(target, { autoAlpha: 0, pointerEvents: "none" });
         target.setAttribute("aria-hidden", "true");
+        target.setAttribute("inert", "");
         gsap.set(homeScreen, { autoAlpha: 1, pointerEvents: "auto" });
         activePanel = null;
         scheduleQuote();
@@ -456,6 +460,7 @@ export default function Home() {
         .add(() => {
           gsap.set(target, { autoAlpha: 0, pointerEvents: "none" });
           target.setAttribute("aria-hidden", "true");
+          target.setAttribute("inert", "");
           gsap.set(homeScreen, { autoAlpha: 1, pointerEvents: "auto" });
           activePanel = null;
         }, 0.84)

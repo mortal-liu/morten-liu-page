@@ -1035,6 +1035,11 @@ button {
   pointer-events: none;
 }
 
+.experience-panel[aria-hidden="true"],
+.experience-panel[aria-hidden="true"] * {
+  pointer-events: none;
+}
+
 .panel-story { --portal-color: #57604d; color: var(--ink); background: #172319; }
 .panel-favorites { --portal-color: #7e4435; color: var(--ink); background: #231914; }
 .panel-pictures { --portal-color: #314b3b; color: var(--ink); background: #122019; }
@@ -1409,7 +1414,7 @@ button {
 
 .favorite-index-view[data-visible="true"],
 .favorite-detail-view[data-visible="true"] {
-  visibility: visible;
+  visibility: inherit;
   opacity: 1;
   pointer-events: auto;
 }
