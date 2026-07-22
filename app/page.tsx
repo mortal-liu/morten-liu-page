@@ -156,6 +156,7 @@ const bookFavorites = [
 export default function Home() {
   const [activeFavorite, setActiveFavorite] = useState<FavoriteId | null>(null);
   const [favoriteView, setFavoriteView] = useState<FavoriteId | null>(null);
+  const [favoriteIsLeaving, setFavoriteIsLeaving] = useState(false);
   const [musicSelection, setMusicSelection] = useState(0);
   const [screenKind, setScreenKind] = useState<ScreenKind>("电影");
   const [screenSelection, setScreenSelection] = useState(0);
@@ -163,7 +164,9 @@ export default function Home() {
   const pageRef = useRef<HTMLElement>(null);
   const preloadedFavoriteImagesRef = useRef<HTMLImageElement[]>([]);
   const favoriteEnterTimerRef = useRef<number | null>(null);
+  const favoriteLeaveTimerRef = useRef<number | null>(null);
   const favoriteViewRef = useRef<FavoriteId | null>(null);
+  const leaveFavoriteSectionRef = useRef<() => void>(() => undefined);
   const skipIntroRef = useRef<() => void>(() => undefined);
   const changeQuoteRef = useRef<(direction: number) => void>(() => undefined);
   const openPanelRef = useRef<(panel: PanelId) => void>(() => undefined);
@@ -192,23 +195,37 @@ export default function Home() {
   }, []);
 
   const enterFavoriteSection = (id: FavoriteId) => {
-    if (favoriteEnterTimerRef.current) window.clearTimeout(favoriteEnterTimerRef.current);
+    if (favoriteEnterTimerRef.current || favoriteLeaveTimerRef.current) return;
     setActiveFavorite(id);
     favoriteEnterTimerRef.current = window.setTimeout(() => {
       setFavoriteView(id);
       favoriteEnterTimerRef.current = null;
-      window.setTimeout(() => pageRef.current?.querySelector<HTMLButtonElement>("[data-favorite-back]")?.focus(), 40);
+      window.setTimeout(() => {
+        pageRef.current?.querySelector<HTMLElement>("[data-favorite-detail-root]")?.focus({ preventScroll: true });
+      }, 40);
     }, 520);
   };
 
   const leaveFavoriteSection = () => {
-    const previousView = favoriteView;
-    setFavoriteView(null);
-    setActiveFavorite(null);
-    window.setTimeout(() => {
-      if (previousView) pageRef.current?.querySelector<HTMLButtonElement>(`[data-favorite-column="${previousView}"]`)?.focus();
-    }, 40);
+    const previousView = favoriteViewRef.current;
+    if (!previousView || favoriteLeaveTimerRef.current) return;
+
+    const exitDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 360;
+    setFavoriteIsLeaving(true);
+    favoriteLeaveTimerRef.current = window.setTimeout(() => {
+      setFavoriteView(null);
+      setActiveFavorite(null);
+      setFavoriteIsLeaving(false);
+      favoriteLeaveTimerRef.current = null;
+      window.setTimeout(() => {
+        pageRef.current?.querySelector<HTMLButtonElement>(`[data-favorite-column="${previousView}"]`)?.focus({ preventScroll: true });
+      }, 40);
+    }, exitDuration);
   };
+
+  useLayoutEffect(() => {
+    leaveFavoriteSectionRef.current = leaveFavoriteSection;
+  });
 
   useLayoutEffect(() => {
     const page = pageRef.current;
@@ -430,9 +447,12 @@ export default function Home() {
 
       if (closingId === "favorites") {
         if (favoriteEnterTimerRef.current) window.clearTimeout(favoriteEnterTimerRef.current);
+        if (favoriteLeaveTimerRef.current) window.clearTimeout(favoriteLeaveTimerRef.current);
         favoriteEnterTimerRef.current = null;
+        favoriteLeaveTimerRef.current = null;
         setFavoriteView(null);
         setActiveFavorite(null);
+        setFavoriteIsLeaving(false);
       }
 
       if (reducedMotion) {
@@ -573,8 +593,7 @@ export default function Home() {
       if (event.key === "Escape") {
         if (introVisible) skipIntroRef.current();
         else if (activePanel === "favorites" && favoriteViewRef.current) {
-          setFavoriteView(null);
-          setActiveFavorite(null);
+          leaveFavoriteSectionRef.current();
         } else if (activePanel) closePanelRef.current();
       }
       if (!introVisible && !activePanel) {
@@ -613,6 +632,7 @@ export default function Home() {
     return () => {
       disposed = true;
       if (favoriteEnterTimerRef.current) window.clearTimeout(favoriteEnterTimerRef.current);
+      if (favoriteLeaveTimerRef.current) window.clearTimeout(favoriteLeaveTimerRef.current);
       introTimeline?.kill();
       introExitTimeline?.kill();
       quoteTimeline?.kill();
@@ -777,7 +797,14 @@ export default function Home() {
       </section>
 
       <section className="experience-panel panel-favorites" data-panel="favorites" aria-hidden="true">
-        <PanelHeader index="02" title="FAVORITES" onClose={() => closePanelRef.current()} />
+        <PanelHeader
+          index="02"
+          title="FAVORITES"
+          detailTitle={favoriteView?.toUpperCase()}
+          isTransitioning={favoriteIsLeaving}
+          onBack={leaveFavoriteSection}
+          onClose={() => closePanelRef.current()}
+        />
         <div className="panel-body favorites-body">
           <div className="favorites-content" data-favorite-view={favoriteView ?? "index"}>
             <div
@@ -815,22 +842,26 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="favorite-detail-view" data-visible={Boolean(favoriteView)} aria-hidden={!favoriteView}>
+            <div
+              className="favorite-detail-view"
+              data-leaving={favoriteIsLeaving}
+              data-visible={Boolean(favoriteView)}
+              aria-hidden={!favoriteView}
+            >
               {favoriteView === "music" && (
-                <MusicArchive activeIndex={musicSelection} onBack={leaveFavoriteSection} onSelect={setMusicSelection} />
+                <MusicArchive activeIndex={musicSelection} onSelect={setMusicSelection} />
               )}
               {favoriteView === "screen" && (
                 <ScreenArchive
                   activeIndex={screenSelection}
                   items={filteredScreenFavorites}
                   kind={screenKind}
-                  onBack={leaveFavoriteSection}
                   onKindChange={(kind) => { setScreenKind(kind); setScreenSelection(0); }}
                   onSelect={setScreenSelection}
                 />
               )}
               {favoriteView === "books" && (
-                <BookArchive activeIndex={bookSelection} onBack={leaveFavoriteSection} onSelect={setBookSelection} />
+                <BookArchive activeIndex={bookSelection} onSelect={setBookSelection} />
               )}
             </div>
           </div>
@@ -874,23 +905,20 @@ export default function Home() {
 
 function MusicArchive({
   activeIndex,
-  onBack,
   onSelect,
 }: {
   activeIndex: number;
-  onBack: () => void;
   onSelect: (index: number) => void;
 }) {
   const activeItem = musicFavorites[activeIndex] ?? musicFavorites[0];
 
   return (
-    <section className="favorite-archive music-archive" aria-label="音乐收藏">
+    <section className="favorite-archive music-archive" data-favorite-detail-root tabIndex={-1} aria-label="音乐收藏">
       <div className="music-ambient-stack" aria-hidden="true">
         {musicFavorites.map((item, index) => (
           <img key={item.title} data-active={index === activeIndex} src={item.image} alt="" decoding="async" />
         ))}
       </div>
-      <ArchiveHeader index="01" label="MUSIC / LISTENING ROOM" onBack={onBack} />
       <div className="music-room">
         <div className="music-art-stage">
           <span className="music-vinyl" aria-hidden="true"><i /></span>
@@ -938,14 +966,12 @@ function ScreenArchive({
   activeIndex,
   items,
   kind,
-  onBack,
   onKindChange,
   onSelect,
 }: {
   activeIndex: number;
   items: Array<{ title: string; kind: ScreenKind; image: string }>;
   kind: ScreenKind;
-  onBack: () => void;
   onKindChange: (kind: ScreenKind) => void;
   onSelect: (index: number) => void;
 }) {
@@ -953,10 +979,9 @@ function ScreenArchive({
   const globalIndex = screenFavorites.findIndex((item) => item.title === activeItem.title);
 
   return (
-    <section className="favorite-archive screen-archive" aria-label="影视收藏">
+    <section className="favorite-archive screen-archive" data-favorite-detail-root tabIndex={-1} aria-label="影视收藏">
       <img className="screen-backdrop" key={activeItem.image} src={activeItem.image} alt="" aria-hidden="true" />
       <span className="screen-shade" aria-hidden="true" />
-      <ArchiveHeader index="02" label="SCREEN / PRIVATE CINEMA" onBack={onBack} />
 
       <div className="screen-stage">
         <nav className="screen-kinds" aria-label="影视类型">
@@ -986,18 +1011,15 @@ function ScreenArchive({
 
 function BookArchive({
   activeIndex,
-  onBack,
   onSelect,
 }: {
   activeIndex: number;
-  onBack: () => void;
   onSelect: (index: number) => void;
 }) {
   const activeItem = bookFavorites[activeIndex] ?? bookFavorites[0];
 
   return (
-    <section className="favorite-archive book-archive" aria-label="书籍收藏">
-      <ArchiveHeader index="03" label="BOOKS / READING FILE" onBack={onBack} />
+    <section className="favorite-archive book-archive" data-favorite-detail-root tabIndex={-1} aria-label="书籍收藏">
       <div className="book-desk">
         <nav className="book-index" aria-label="书籍目录">
           <p>READING INDEX / 003</p>
@@ -1038,16 +1060,6 @@ function BookArchive({
   );
 }
 
-function ArchiveHeader({ index, label, onBack }: { index: string; label: string; onBack: () => void }) {
-  return (
-    <header className="favorite-archive-header">
-      <button type="button" data-favorite-back onClick={onBack}><span>←</span> FAVORITES</button>
-      <p>{index} / 03 · {label}</p>
-      <span>PERSONAL SELECTION</span>
-    </header>
-  );
-}
-
 function AnnotationPlaceholder({ prompt }: { prompt: string }) {
   return (
     <div className="annotation-placeholder">
@@ -1058,14 +1070,39 @@ function AnnotationPlaceholder({ prompt }: { prompt: string }) {
   );
 }
 
-function PanelHeader({ index, title, onClose }: { index: string; title: string; onClose: () => void }) {
+function PanelHeader({
+  index,
+  title,
+  detailTitle,
+  isTransitioning = false,
+  onBack,
+  onClose,
+}: {
+  index: string;
+  title: string;
+  detailTitle?: string;
+  isTransitioning?: boolean;
+  onBack?: () => void;
+  onClose: () => void;
+}) {
+  const isDetail = Boolean(detailTitle && onBack);
+
   return (
     <header className="panel-header">
       <a href="#home" aria-label="Morten Liu 主页" onClick={(event) => { event.preventDefault(); onClose(); }}>
         <span className="panel-monogram">M</span><span>MORTEN—LIU</span>
       </a>
-      <p>{index} / 04 · {title}</p>
-      <button type="button" data-panel-close onClick={onClose}>关闭 <span aria-hidden="true">×</span></button>
+      <p>{index} / 04 · {title}{detailTitle ? ` / ${detailTitle}` : ""}</p>
+      <button
+        type="button"
+        data-mode={isDetail ? "back" : "close"}
+        data-panel-close={isDetail ? undefined : ""}
+        disabled={isTransitioning}
+        aria-label={isDetail ? "返回 Favorites" : "关闭并返回主页"}
+        onClick={isDetail ? onBack : onClose}
+      >
+        {isDetail ? "返回 FAVORITES" : "关闭"} <span aria-hidden="true">{isDetail ? "←" : "×"}</span>
+      </button>
     </header>
   );
 }
