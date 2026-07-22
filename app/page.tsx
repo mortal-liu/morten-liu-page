@@ -1,9 +1,10 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 
 type PanelId = "story" | "favorites" | "pictures" | "thinking";
+type FavoriteId = "music" | "screen" | "books";
 
 const featuredQuotes = [
   {
@@ -70,7 +71,7 @@ const featuredQuotes = [
 
 const portals: Array<{ id: PanelId; index: string; title: string; subtitle: string }> = [
   { id: "story", index: "01", title: "STORY", subtitle: "人生经历" },
-  { id: "favorites", index: "02", title: "FAVORITES", subtitle: "音乐 · 电影 · 书" },
+  { id: "favorites", index: "02", title: "FAVORITES", subtitle: "音乐 · 影视 · 书" },
   { id: "pictures", index: "03", title: "PICTURES", subtitle: "影像与瞬间" },
   { id: "thinking", index: "04", title: "THINKING", subtitle: "一些想法" },
 ];
@@ -82,7 +83,42 @@ const panelTitles: Record<PanelId, string> = {
   thinking: "THINKING",
 };
 
+const favoriteSections: Array<{
+  id: FavoriteId;
+  index: string;
+  title: string;
+  chineseTitle: string;
+  categories: string;
+  note: string;
+}> = [
+  {
+    id: "music",
+    index: "01",
+    title: "MUSIC",
+    chineseTitle: "音乐",
+    categories: "SONGS / ALBUMS",
+    note: "歌曲、专辑与反复播放的声音。",
+  },
+  {
+    id: "screen",
+    index: "02",
+    title: "SCREEN",
+    chineseTitle: "影视",
+    categories: "FILMS / SERIES / ANIMATION",
+    note: "电影、电视剧与动漫。",
+  },
+  {
+    id: "books",
+    index: "03",
+    title: "BOOKS",
+    chineseTitle: "书籍",
+    categories: "BOOKS / AUTHORS / PASSAGES",
+    note: "书籍、作者与留下来的段落。",
+  },
+];
+
 export default function Home() {
+  const [activeFavorite, setActiveFavorite] = useState<FavoriteId | null>(null);
   const pageRef = useRef<HTMLElement>(null);
   const skipIntroRef = useRef<() => void>(() => undefined);
   const changeQuoteRef = useRef<(direction: number) => void>(() => undefined);
@@ -640,19 +676,32 @@ export default function Home() {
       <section className="experience-panel panel-favorites" data-panel="favorites" aria-hidden="true">
         <PanelHeader index="02" title="FAVORITES" onClose={() => closePanelRef.current()} />
         <div className="panel-body favorites-body">
-          <aside data-panel-reveal><span>02 / 04</span><p>THINGS I RETURN TO<br />AGAIN AND AGAIN</p></aside>
           <div className="favorites-content">
-            <p className="panel-kicker" data-panel-reveal>PERSONAL SELECTION / INDEX</p>
-            <h2 data-panel-reveal>Favorites</h2>
-            <div className="favorite-categories">
-              {[
-                ["01", "MUSIC", "歌曲与专辑"],
-                ["02", "FILMS", "电影与镜头"],
-                ["03", "BOOKS", "书籍与作者"],
-              ].map(([index, title, subtitle]) => (
-                <article data-panel-reveal key={title}>
-                  <span>{index}</span><strong>{title}</strong><small>{subtitle}</small><i>↗</i>
-                </article>
+            <div className="favorite-categories" data-has-active={Boolean(activeFavorite)} aria-label="喜欢的内容分类">
+              {favoriteSections.map((section) => (
+                <button
+                  className={`favorite-column favorite-column--${section.id}`}
+                  data-active={activeFavorite === section.id}
+                  data-panel-reveal
+                  key={section.id}
+                  type="button"
+                  aria-pressed={activeFavorite === section.id}
+                  onClick={() => setActiveFavorite((current) => current === section.id ? null : section.id)}
+                >
+                  <span className="favorite-column-index">{section.index} / 03</span>
+                  <span className="favorite-column-tree" aria-hidden="true">
+                    <i /><i /><i /><b /><b /><b /><b />
+                  </span>
+                  <span className="favorite-column-title">
+                    <small>{section.chineseTitle}</small>
+                    <strong>{section.title}</strong>
+                  </span>
+                  <span className="favorite-column-detail">
+                    <small>{section.categories}</small>
+                    <span>{section.note}</span>
+                  </span>
+                  <span className="favorite-column-action">展开预览 <i>↗</i></span>
+                </button>
               ))}
             </div>
           </div>
