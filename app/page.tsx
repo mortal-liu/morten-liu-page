@@ -177,16 +177,28 @@ export default function Home() {
   }, [favoriteView]);
 
   useEffect(() => {
-    const preloadTimer = window.setTimeout(() => {
-      const sources = [...musicFavorites, ...bookFavorites].map((item) => item.image);
-      preloadedFavoriteImagesRef.current = sources.map((source) => {
+    const preloadImages = (sources: string[], priority: "high" | "low") => (
+      sources.map((source) => {
         const image = new Image();
         image.decoding = "async";
+        image.fetchPriority = priority;
         image.src = source;
         void image.decode().catch(() => undefined);
         return image;
-      });
-    }, 1400);
+      })
+    );
+
+    const priorityScreenSources = screenFavorites.slice(0, 2).map((item) => item.image);
+    preloadedFavoriteImagesRef.current = preloadImages(priorityScreenSources, "high");
+
+    const preloadTimer = window.setTimeout(() => {
+      const deferredSources = [
+        ...screenFavorites.slice(2),
+        ...musicFavorites,
+        ...bookFavorites,
+      ].map((item) => item.image);
+      preloadedFavoriteImagesRef.current.push(...preloadImages(deferredSources, "low"));
+    }, 900);
 
     return () => {
       window.clearTimeout(preloadTimer);
