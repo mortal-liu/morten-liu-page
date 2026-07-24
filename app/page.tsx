@@ -237,6 +237,7 @@ export default function Home() {
   const [favoriteView, setFavoriteView] = useState<FavoriteId | null>(null);
   const [favoriteIsLeaving, setFavoriteIsLeaving] = useState(false);
   const [musicSelection, setMusicSelection] = useState(0);
+  const [musicArtistSelection, setMusicArtistSelection] = useState<number | null>(null);
   const [screenKind, setScreenKind] = useState<ScreenKind>("电影");
   const [screenSelection, setScreenSelection] = useState(0);
   const [bookSelection, setBookSelection] = useState(0);
@@ -245,6 +246,7 @@ export default function Home() {
   const favoriteEnterTimerRef = useRef<number | null>(null);
   const favoriteLeaveTimerRef = useRef<number | null>(null);
   const favoriteViewRef = useRef<FavoriteId | null>(null);
+  const musicArtistSelectionRef = useRef<number | null>(null);
   const storyIsOpenRef = useRef(false);
   const leaveStoryRef = useRef<() => void>(() => undefined);
   const leaveFavoriteSectionRef = useRef<() => void>(() => undefined);
@@ -256,6 +258,10 @@ export default function Home() {
   useLayoutEffect(() => {
     favoriteViewRef.current = favoriteView;
   }, [favoriteView]);
+
+  useLayoutEffect(() => {
+    musicArtistSelectionRef.current = musicArtistSelection;
+  }, [musicArtistSelection]);
 
   useLayoutEffect(() => {
     storyIsOpenRef.current = storyIsOpen;
@@ -314,6 +320,10 @@ export default function Home() {
 
   const enterFavoriteSection = (id: FavoriteId) => {
     if (favoriteEnterTimerRef.current || favoriteLeaveTimerRef.current) return;
+    if (id === "music") {
+      musicArtistSelectionRef.current = null;
+      setMusicArtistSelection(null);
+    }
     setActiveFavorite(id);
     favoriteEnterTimerRef.current = window.setTimeout(() => {
       setFavoriteView(id);
@@ -327,6 +337,15 @@ export default function Home() {
   const leaveFavoriteSection = () => {
     const previousView = favoriteViewRef.current;
     if (!previousView || favoriteLeaveTimerRef.current) return;
+
+    if (previousView === "music" && musicArtistSelectionRef.current !== null) {
+      musicArtistSelectionRef.current = null;
+      setMusicArtistSelection(null);
+      window.setTimeout(() => {
+        pageRef.current?.querySelector<HTMLButtonElement>("[data-music-artist-card]")?.focus({ preventScroll: true });
+      }, 40);
+      return;
+    }
 
     const exitDuration = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 360;
     setFavoriteIsLeaving(true);
@@ -1049,11 +1068,17 @@ export default function Home() {
                   title={favoriteView.toUpperCase()}
                   tone={favoriteView === "books" ? "dark" : "light"}
                   isTransitioning={favoriteIsLeaving}
+                  backTarget={favoriteView === "music" && musicArtistSelection !== null ? "ARTISTS" : "FAVORITES"}
                   onBack={leaveFavoriteSection}
                 />
               )}
               {favoriteView === "music" && (
-                <MusicArchive activeIndex={musicSelection} onSelect={setMusicSelection} />
+                <MusicArchive
+                  activeIndex={musicSelection}
+                  activeArtistIndex={musicArtistSelection}
+                  onArtistSelect={setMusicArtistSelection}
+                  onSelect={setMusicSelection}
+                />
               )}
               {favoriteView === "screen" && (
                 <ScreenArchive
@@ -1109,12 +1134,15 @@ export default function Home() {
 
 function MusicArchive({
   activeIndex,
+  activeArtistIndex,
+  onArtistSelect,
   onSelect,
 }: {
   activeIndex: number;
+  activeArtistIndex: number | null;
+  onArtistSelect: (index: number | null) => void;
   onSelect: (index: number) => void;
 }) {
-  const [activeArtistIndex, setActiveArtistIndex] = useState<number | null>(null);
   const activeArtist = musicArtists[activeArtistIndex ?? 0];
   const activeItem = activeArtist.tracks[activeIndex] ?? null;
 
@@ -1138,9 +1166,10 @@ function MusicArchive({
             {musicArtists.map((artist, index) => (
               <button
                 className="music-artist-card"
+                data-music-artist-card
                 key={artist.name}
                 type="button"
-                onClick={() => setActiveArtistIndex(index)}
+                onClick={() => onArtistSelect(index)}
                 aria-label={`打开歌手 ${artist.chineseName} ${artist.name} 的歌曲档案`}
               >
                 <span className="music-artist-card-frame">
@@ -1176,7 +1205,7 @@ function MusicArchive({
           </div>
 
           <div className="music-room">
-            <button className="music-back-to-artists" type="button" onClick={() => setActiveArtistIndex(null)}>
+            <button className="music-back-to-artists" type="button" onClick={() => onArtistSelect(null)}>
               <span aria-hidden="true">←</span> ARTIST INDEX
             </button>
 
@@ -1448,18 +1477,20 @@ function FavoriteImmersiveHeader({
   title,
   tone,
   isTransitioning,
+  backTarget,
   onBack,
 }: {
   title: string;
   tone: "light" | "dark";
   isTransitioning: boolean;
+  backTarget: "ARTISTS" | "FAVORITES";
   onBack: () => void;
 }) {
   return (
     <header className="favorite-immersive-header" data-tone={tone}>
       <p><span>02 / 04</span> · FAVORITES / {title}</p>
-      <button type="button" disabled={isTransitioning} aria-label="返回 Favorites" onClick={onBack}>
-        返回 <strong>FAVORITES</strong><span aria-hidden="true">←</span>
+      <button type="button" disabled={isTransitioning} aria-label={`返回 ${backTarget}`} onClick={onBack}>
+        返回 <strong>{backTarget}</strong><span aria-hidden="true">←</span>
       </button>
     </header>
   );
