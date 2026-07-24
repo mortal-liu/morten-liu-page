@@ -143,6 +143,27 @@ const musicArtists = [
     image: "/favorites/music/artists/asen-portrait.png",
     tracks: musicFavorites,
   },
+  {
+    index: "02",
+    name: "J. COLE",
+    chineseName: "J. Cole",
+    image: "/favorites/music/artists/j-cole.jpg",
+    tracks: [],
+  },
+  {
+    index: "03",
+    name: "KANYE WEST",
+    chineseName: "Kanye West",
+    image: "/favorites/music/artists/kanye-west.jpg",
+    tracks: [],
+  },
+  {
+    index: "04",
+    name: "KENDRICK LAMAR",
+    chineseName: "Kendrick Lamar",
+    image: "/favorites/music/artists/kendrick-lamar.jpg",
+    tracks: [],
+  },
 ];
 
 type ScreenKind = "电影" | "电视剧" | "动漫";
@@ -272,7 +293,7 @@ export default function Home() {
 
     const priorityFavoriteSources = [
       ...screenFavorites.slice(0, 2).map((item) => item.image),
-      musicArtists[0].image,
+      ...musicArtists.map((artist) => artist.image),
     ];
     preloadedFavoriteImagesRef.current = preloadImages(priorityFavoriteSources, "high");
 
@@ -1094,8 +1115,8 @@ function MusicArchive({
   onSelect: (index: number) => void;
 }) {
   const [activeArtistIndex, setActiveArtistIndex] = useState<number | null>(null);
-  const activeItem = musicFavorites[activeIndex] ?? musicFavorites[0];
   const activeArtist = musicArtists[activeArtistIndex ?? 0];
+  const activeItem = activeArtist.tracks[activeIndex] ?? null;
 
   return (
     <section
@@ -1138,16 +1159,20 @@ function MusicArchive({
           </div>
 
           <footer className="music-lobby-footer">
-            <span>{String(musicArtists.length).padStart(2, "0")} ARTIST IN ARCHIVE</span>
+            <span>{String(musicArtists.length).padStart(2, "0")} ARTISTS IN ARCHIVE</span>
             <span>MOVE / HOVER / ENTER</span>
           </footer>
         </div>
       ) : (
         <>
           <div className="music-ambient-stack" aria-hidden="true">
-            {activeArtist.tracks.map((item, index) => (
-              <img key={item.title} data-active={index === activeIndex} src={item.image} alt="" decoding="async" />
-            ))}
+            {activeArtist.tracks.length > 0 ? (
+              activeArtist.tracks.map((item, index) => (
+                <img key={item.title} data-active={index === activeIndex} src={item.image} alt="" decoding="async" />
+              ))
+            ) : (
+              <img data-active="true" src={activeArtist.image} alt="" decoding="async" />
+            )}
           </div>
 
           <div className="music-room">
@@ -1163,46 +1188,67 @@ function MusicArchive({
               <p><span>ARTIST {activeArtist.index}</span><small>PORTRAIT ARCHIVE</small></p>
             </aside>
 
-            <div className="music-artist-profile">
-              <div className="music-artist-heading">
-                <p>{activeArtist.name} / SELECTED TRACK</p>
-                <h3>{activeItem.title}</h3>
-                <span>{activeItem.artist}</span>
-              </div>
-
-              <div className="music-selected-track">
-                <div className="music-selected-cover">
-                  {activeArtist.tracks.map((item, index) => (
-                    <img
-                      key={item.title}
-                      data-active={index === activeIndex}
-                      src={item.image}
-                      alt={index === activeIndex ? `${item.title}封面` : ""}
-                      aria-hidden={index !== activeIndex}
-                      decoding="async"
-                    />
-                  ))}
+            {activeItem ? (
+              <div className="music-artist-profile">
+                <div className="music-artist-heading">
+                  <p>{activeArtist.name} / SELECTED TRACK</p>
+                  <h3>{activeItem.title}</h3>
+                  <span>{activeItem.artist}</span>
                 </div>
-                <div className="music-selected-index">
-                  <p>TRACK {String(activeIndex + 1).padStart(2, "0")} / {String(activeArtist.tracks.length).padStart(2, "0")}</p>
-                  <span>{activeArtist.chineseName} · {activeArtist.name}</span>
+
+                <div className="music-selected-track">
+                  <div className="music-selected-cover">
+                    {activeArtist.tracks.map((item, index) => (
+                      <img
+                        key={item.title}
+                        data-active={index === activeIndex}
+                        src={item.image}
+                        alt={index === activeIndex ? `${item.title}封面` : ""}
+                        aria-hidden={index !== activeIndex}
+                        decoding="async"
+                      />
+                    ))}
+                  </div>
+                  <div className="music-selected-index">
+                    <p>TRACK {String(activeIndex + 1).padStart(2, "0")} / {String(activeArtist.tracks.length).padStart(2, "0")}</p>
+                    <span>{activeArtist.chineseName} · {activeArtist.name}</span>
+                  </div>
+                </div>
+
+                <AnnotationPlaceholder prompt="在这里写下它为什么会被你反复播放，或某一句留下来的歌词。" />
+              </div>
+            ) : (
+              <div className="music-empty-profile">
+                <p>ARTIST ARCHIVE / CONTENT PENDING</p>
+                <h3>{activeArtist.name}</h3>
+                <span>{activeArtist.chineseName}</span>
+                <div>
+                  <small>00 / TRACKS</small>
+                  <strong>内容待补充</strong>
+                  <p>这里以后会放入你选择的歌曲、介绍与自己的注解。</p>
                 </div>
               </div>
+            )}
 
-              <AnnotationPlaceholder prompt="在这里写下它为什么会被你反复播放，或某一句留下来的歌词。" />
-            </div>
-
-            <ol className="music-track-list" aria-label={`${activeArtist.chineseName} ${activeArtist.name} 歌曲列表`}>
-              {activeArtist.tracks.map((item, index) => (
-                <li key={item.title}>
-                  <button type="button" data-selected={index === activeIndex} onClick={() => onSelect(index)}>
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                    <span className="music-track-copy"><strong>{item.title}</strong><small>{item.artist}</small></span>
-                    <small>{index === activeIndex ? "PLAYING" : "SELECT"}</small>
-                  </button>
-                </li>
-              ))}
-            </ol>
+            {activeArtist.tracks.length > 0 ? (
+              <ol className="music-track-list" aria-label={`${activeArtist.chineseName} ${activeArtist.name} 歌曲列表`}>
+                {activeArtist.tracks.map((item, index) => (
+                  <li key={item.title}>
+                    <button type="button" data-selected={index === activeIndex} onClick={() => onSelect(index)}>
+                      <span>{String(index + 1).padStart(2, "0")}</span>
+                      <span className="music-track-copy"><strong>{item.title}</strong><small>{item.artist}</small></span>
+                      <small>{index === activeIndex ? "PLAYING" : "SELECT"}</small>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <aside className="music-empty-track-list" aria-label={`${activeArtist.name} 暂无歌曲`}>
+                <span>TRACK INDEX</span>
+                <strong>00</strong>
+                <p>SONGS WILL<br />BE ADDED LATER</p>
+              </aside>
+            )}
           </div>
         </>
       )}
