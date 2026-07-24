@@ -5,6 +5,7 @@ import { gsap } from "gsap";
 
 type PanelId = "story" | "favorites" | "pictures" | "thinking";
 type FavoriteId = "music" | "screen" | "books";
+type StoryView = "cover" | "archive" | "article";
 
 const featuredQuotes = [
   {
@@ -220,19 +221,12 @@ const storyIndexEntries = [
     title: storyPrologue.title,
     label: storyPrologue.label,
     note: "关于记忆、性格，以及为什么要回头理解自己。",
-    available: true,
+    deck: "我只是不想让所有过程都慢慢消失，最后只剩下几个关于“我是谁”的结论。",
   },
-  ...Array.from({ length: 5 }, (_, index) => ({
-    index: String(index + 1).padStart(2, "0"),
-    title: "未命名",
-    label: "TITLE PENDING",
-    note: "尚未写下。",
-    available: false,
-  })),
 ];
 
 export default function Home() {
-  const [storyIsOpen, setStoryIsOpen] = useState(false);
+  const [storyView, setStoryView] = useState<StoryView>("cover");
   const [activeFavorite, setActiveFavorite] = useState<FavoriteId | null>(null);
   const [favoriteView, setFavoriteView] = useState<FavoriteId | null>(null);
   const [favoriteIsLeaving, setFavoriteIsLeaving] = useState(false);
@@ -247,7 +241,8 @@ export default function Home() {
   const favoriteLeaveTimerRef = useRef<number | null>(null);
   const favoriteViewRef = useRef<FavoriteId | null>(null);
   const musicArtistSelectionRef = useRef<number | null>(null);
-  const storyIsOpenRef = useRef(false);
+  const storyViewRef = useRef<StoryView>("cover");
+  const storyArticleReturnRef = useRef<"cover" | "archive">("cover");
   const leaveStoryRef = useRef<() => void>(() => undefined);
   const leaveFavoriteSectionRef = useRef<() => void>(() => undefined);
   const skipIntroRef = useRef<() => void>(() => undefined);
@@ -264,20 +259,35 @@ export default function Home() {
   }, [musicArtistSelection]);
 
   useLayoutEffect(() => {
-    storyIsOpenRef.current = storyIsOpen;
-  }, [storyIsOpen]);
+    storyViewRef.current = storyView;
+  }, [storyView]);
 
-  const openStory = () => {
-    setStoryIsOpen(true);
+  const openStory = (returnTo: "cover" | "archive") => {
+    storyArticleReturnRef.current = returnTo;
+    setStoryView("article");
     window.setTimeout(() => {
       pageRef.current?.querySelector<HTMLElement>("[data-story-detail-root]")?.focus({ preventScroll: true });
     }, 40);
   };
 
-  const leaveStory = () => {
-    setStoryIsOpen(false);
+  const openStoryArchive = () => {
+    setStoryView("archive");
     window.setTimeout(() => {
-      pageRef.current?.querySelector<HTMLButtonElement>("[data-story-entry]")?.focus({ preventScroll: true });
+      pageRef.current?.querySelector<HTMLElement>("[data-story-archive-root]")?.focus({ preventScroll: true });
+    }, 40);
+  };
+
+  const leaveStory = () => {
+    const currentView = storyViewRef.current;
+    const nextView = currentView === "article" ? storyArticleReturnRef.current : "cover";
+    setStoryView(nextView);
+    window.setTimeout(() => {
+      const focusTarget = nextView === "archive"
+        ? "[data-story-archive-root]"
+        : currentView === "archive"
+          ? "[data-story-archive-gate]"
+          : "[data-story-entry]";
+      pageRef.current?.querySelector<HTMLElement>(focusTarget)?.focus({ preventScroll: true });
     }, 40);
   };
 
@@ -643,7 +653,7 @@ export default function Home() {
         setActiveFavorite(null);
         setFavoriteIsLeaving(false);
       }
-      if (closingId === "story") setStoryIsOpen(false);
+      if (closingId === "story") setStoryView("cover");
 
       if (reducedMotion) {
         gsap.set(target, { autoAlpha: 0, pointerEvents: "none" });
@@ -774,7 +784,7 @@ export default function Home() {
       const introVisible = intro && gsap.getProperty(intro, "visibility") !== "hidden";
       if (event.key === "Escape") {
         if (introVisible) skipIntroRef.current();
-        else if (activePanel === "story" && storyIsOpenRef.current) {
+        else if (activePanel === "story" && storyViewRef.current !== "cover") {
           leaveStoryRef.current();
         } else if (activePanel === "favorites" && favoriteViewRef.current) {
           leaveFavoriteSectionRef.current();
@@ -966,17 +976,17 @@ export default function Home() {
 
       <section
         className="experience-panel panel-story"
-        data-detail={storyIsOpen}
+        data-detail={storyView !== "cover"}
         data-panel="story"
         aria-hidden="true"
       >
         <PanelHeader index="01" title="STORY" onClose={() => closePanelRef.current()} />
         <div className="panel-body story-body">
           <aside data-panel-reveal><span>01 / 04</span><p>LIFE NOTES<br />WITHOUT A TIMELINE</p></aside>
-          <div className="story-content" data-story-view={storyIsOpen ? "article" : "index"}>
-            <div className="story-index-view" data-visible={!storyIsOpen} aria-hidden={storyIsOpen}>
+          <div className="story-content" data-story-view={storyView}>
+            <div className="story-index-view" data-visible={storyView === "cover"} aria-hidden={storyView !== "cover"}>
               <div className="story-index-intro" data-panel-reveal>
-                <p className="panel-kicker">PERSONAL HISTORY / 001—006</p>
+                <p className="panel-kicker">PERSONAL HISTORY / 001—∞</p>
                 <h2>Story</h2>
                 <p className="story-index-thesis">向前生活，向后理解。</p>
                 <p className="story-index-description">
@@ -985,39 +995,96 @@ export default function Home() {
                 <div className="story-index-status" aria-label="Story 写作进度">
                   <span><strong>01</strong> WRITTEN</span>
                   <i aria-hidden="true" />
-                  <span><strong>05</strong> WAITING</span>
+                  <span><strong>∞</strong> GROWING</span>
                 </div>
               </div>
-              <div className="story-entry-list" data-panel-reveal aria-label="Story 文章目录">
-                {storyIndexEntries.map((entry) => (
-                  entry.available ? (
-                    <button
-                      className="story-entry"
-                      data-available="true"
-                      data-story-entry
-                      key={entry.index}
-                      type="button"
-                      onClick={openStory}
-                    >
-                      <StoryEntryContents entry={entry} />
-                    </button>
-                  ) : (
-                    <div
-                      className="story-entry"
-                      data-available="false"
-                      key={entry.index}
-                      aria-label={`第 ${entry.index} 篇，未命名，尚未写下`}
-                    >
-                      <StoryEntryContents entry={entry} />
-                    </div>
-                  )
-                ))}
+              <div className="story-canopy" data-panel-reveal>
+                <div className="story-canopy-branch" aria-hidden="true">
+                  <i /><i /><i /><i />
+                </div>
+                <button
+                  className="story-feature-entry"
+                  data-story-entry
+                  type="button"
+                  onClick={() => openStory("cover")}
+                >
+                  <span className="story-feature-index">FEATURED MEMORY / {storyIndexEntries[0].index}</span>
+                  <span className="story-feature-copy">
+                    <small>{storyIndexEntries[0].label}</small>
+                    <strong>{storyIndexEntries[0].title}</strong>
+                    <p>{storyIndexEntries[0].deck}</p>
+                  </span>
+                  <span className="story-feature-action">阅读全文 <i aria-hidden="true">↗</i></span>
+                </button>
+                <button
+                  className="story-archive-gate"
+                  data-story-archive-gate
+                  type="button"
+                  onClick={openStoryArchive}
+                >
+                  <span>ALL STORIES / 年轮档案</span>
+                  <strong>进入年轮</strong>
+                  <small>01 篇已写下 · 档案会随文字继续生长</small>
+                  <i aria-hidden="true">↓</i>
+                </button>
               </div>
             </div>
 
-            <div className="story-detail-view" data-visible={storyIsOpen} aria-hidden={!storyIsOpen}>
-              {storyIsOpen && (
-                <StoryArticle article={storyPrologue} onBack={leaveStory} />
+            <div className="story-archive-view" data-visible={storyView === "archive"} aria-hidden={storyView !== "archive"}>
+              {storyView === "archive" && (
+                <section className="story-archive" data-story-archive-root tabIndex={-1}>
+                  <header className="story-immersive-header story-archive-header">
+                    <p><span>01 / 04</span> · STORY / ALL STORIES</p>
+                    <button type="button" aria-label="返回 Story 封面" onClick={leaveStory}>
+                      返回 <strong>STORY</strong><span aria-hidden="true">←</span>
+                    </button>
+                  </header>
+                  <div className="story-archive-scroll">
+                    <div className="story-archive-intro">
+                      <p>THE GROWING ARCHIVE / 001—∞</p>
+                      <h2>年轮</h2>
+                      <div>
+                        <strong>写下的顺序，<br />不是人生的顺序。</strong>
+                        <span>每一篇文章留下一圈纹理。它们不必完整，也不必按照年份整齐地回来。</span>
+                      </div>
+                    </div>
+                    <div className="story-tree-index" aria-label="Story 全部篇目">
+                      <i className="story-tree-trunk" aria-hidden="true" />
+                      {storyIndexEntries.map((entry, index) => (
+                        <button
+                          className="story-branch-entry"
+                          data-side={index % 2 === 0 ? "left" : "right"}
+                          key={entry.index}
+                          type="button"
+                          onClick={() => openStory("archive")}
+                        >
+                          <span>{entry.index}</span>
+                          <div>
+                            <small>{entry.label} · CHAPTER {entry.index}</small>
+                            <strong>{entry.title}</strong>
+                            <p>{entry.note}</p>
+                          </div>
+                          <i aria-hidden="true">↗</i>
+                        </button>
+                      ))}
+                      <div className="story-growth-marker">
+                        <i aria-hidden="true" />
+                        <span>NEXT RING</span>
+                        <p>等待下一篇被写下。</p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+            </div>
+
+            <div className="story-detail-view" data-visible={storyView === "article"} aria-hidden={storyView !== "article"}>
+              {storyView === "article" && (
+                <StoryArticle
+                  article={storyPrologue}
+                  backLabel={storyArticleReturnRef.current === "archive" ? "年轮" : "STORY"}
+                  onBack={leaveStory}
+                />
               )}
             </div>
           </div>
@@ -1423,28 +1490,13 @@ function AnnotationPlaceholder({ prompt }: { prompt: string }) {
   );
 }
 
-function StoryEntryContents({ entry }: { entry: (typeof storyIndexEntries)[number] }) {
-  return (
-    <>
-      <span className="story-entry-number">CHAPTER {entry.index}</span>
-      <span className="story-entry-rule" aria-hidden="true" />
-      <span className="story-entry-copy">
-        <strong>{entry.title}</strong>
-        <small>{entry.note}</small>
-      </span>
-      <span className="story-entry-action">
-        {entry.available ? "阅读全文" : entry.label}
-        <i aria-hidden="true">{entry.available ? "↗" : "—"}</i>
-      </span>
-    </>
-  );
-}
-
 function StoryArticle({
   article,
+  backLabel,
   onBack,
 }: {
   article: typeof storyPrologue;
+  backLabel: string;
   onBack: () => void;
 }) {
   const sectionBreaks = new Set([8, 12, 18]);
@@ -1453,8 +1505,8 @@ function StoryArticle({
     <article className="story-article" data-story-detail-root tabIndex={-1}>
       <header className="story-immersive-header">
         <p><span>01 / 04</span> · STORY / {article.index}</p>
-        <button type="button" aria-label="返回 Story 目录" onClick={onBack}>
-          返回 <strong>STORY</strong><span aria-hidden="true">←</span>
+        <button type="button" aria-label={`返回 ${backLabel}`} onClick={onBack}>
+          返回 <strong>{backLabel}</strong><span aria-hidden="true">←</span>
         </button>
       </header>
 
