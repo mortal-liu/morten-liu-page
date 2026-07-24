@@ -143,6 +143,12 @@ const musicAlbums = [
     image: "/quotes/after-rain.jpg",
     meta: "ALBUM / PERSONAL SELECTION",
   },
+  {
+    title: "Life After Small Town",
+    artist: "艾志恒Asen",
+    image: "/favorites/music/small-town-child.jpg",
+    meta: "ALBUM / PERSONAL SELECTION",
+  },
 ];
 
 const musicArtists = [
