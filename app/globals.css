@@ -1819,32 +1819,151 @@ button {
   padding-top: clamp(78px, 9vh, 102px);
 }
 
-.screen-kinds { display: flex; gap: 8px; }
+.screen-kinds {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 2vw, 30px);
+  width: 100%;
+  isolation: isolate;
+}
+
 .screen-kinds button {
-  padding: 8px 13px;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(10px, 1.1vw, 17px);
+  min-width: 0;
+  min-height: clamp(58px, 7.4vh, 76px);
+  padding: 10px clamp(14px, 1.7vw, 24px);
+  overflow: hidden;
   border: 1px solid rgba(243, 238, 226, 0.2);
-  border-radius: 999px;
-  color: rgba(243, 238, 226, 0.56);
-  background: transparent;
-  font-size: 7px;
-  font-weight: 600;
-  letter-spacing: 0.13em;
+  border-radius: 18px;
+  color: rgba(243, 238, 226, 0.7);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.105), rgba(255, 255, 255, 0.025) 46%, rgba(97, 125, 103, 0.08)),
+    rgba(12, 22, 15, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 14px 32px rgba(0, 0, 0, 0.12);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  backdrop-filter: blur(22px) saturate(1.25);
+  text-align: left;
   cursor: pointer;
-  transition: color 260ms ease, background 260ms ease, border-color 260ms ease;
+  transform: translate3d(0, 0, 0);
+  transition:
+    color 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    background 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.screen-kinds button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255, 255, 255, 0.25), transparent 38%),
+    linear-gradient(105deg, transparent 36%, rgba(255, 255, 255, 0.1) 50%, transparent 64%);
+  opacity: 0.46;
+  transform: translate3d(-18%, 0, 0);
+  transition: opacity 420ms ease, transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.screen-kind-index {
+  align-self: start;
+  padding-top: 3px;
+  font-size: 6px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  opacity: 0.46;
+}
+
+.screen-kind-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.screen-kind-copy strong {
+  font: 400 clamp(16px, 1.45vw, 22px) / 1 Georgia, "Songti SC", serif;
+  letter-spacing: 0.04em;
+}
+
+.screen-kind-copy small {
+  overflow: hidden;
+  font-size: 5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  opacity: 0.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.screen-kinds button > i {
+  width: 6px;
+  height: 6px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.46;
+  box-shadow: 0 0 0 0 rgba(211, 224, 206, 0);
+  transition: background 360ms ease, opacity 360ms ease, box-shadow 420ms ease;
 }
 
 .screen-kinds button:hover,
-.screen-kinds button:focus-visible,
+.screen-kinds button:focus-visible {
+  color: rgba(255, 255, 255, 0.92);
+  border-color: rgba(243, 238, 226, 0.42);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.045) 48%, rgba(129, 156, 134, 0.12)),
+    rgba(17, 29, 20, 0.36);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.17),
+    0 18px 38px rgba(0, 0, 0, 0.18);
+  transform: translate3d(0, -3px, 0);
+}
+
 .screen-kinds button[data-selected="true"] {
-  color: var(--forest-deep);
-  border-color: var(--paper);
-  background: var(--paper);
+  color: #f7f4e9;
+  border-color: rgba(223, 233, 217, 0.5);
+  background:
+    linear-gradient(135deg, rgba(219, 231, 213, 0.24), rgba(130, 157, 135, 0.13) 52%, rgba(255, 255, 255, 0.08)),
+    rgba(22, 37, 26, 0.56);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.16),
+    0 14px 44px rgba(0, 0, 0, 0.2),
+    0 0 30px rgba(142, 169, 145, 0.09);
+  transform: translate3d(0, -2px, 0);
+}
+
+.screen-kinds button:hover::before,
+.screen-kinds button:focus-visible::before,
+.screen-kinds button[data-selected="true"]::before {
+  opacity: 0.9;
+  transform: translate3d(8%, 0, 0);
+}
+
+.screen-kinds button[data-selected="true"] > i {
+  background: #dce8d7;
+  opacity: 1;
+  box-shadow: 0 0 0 5px rgba(196, 214, 192, 0.08), 0 0 14px rgba(211, 227, 207, 0.52);
+}
+
+.screen-kinds button:active {
+  transform: translate3d(0, 0, 0) scale(0.985);
 }
 
 .screen-title-block {
   align-self: center;
   width: min(59vw, 780px);
   padding: 18px 0;
+  animation: screen-copy-arrive 640ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .screen-title-block > span {
@@ -1864,6 +1983,11 @@ button {
 
 .screen-title-block .annotation-placeholder { margin-top: clamp(18px, 3vh, 30px); }
 
+@keyframes screen-copy-arrive {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
 .screen-poster-rail {
   display: flex;
   align-items: end;
@@ -1872,9 +1996,15 @@ button {
   overflow-x: auto;
   padding: 10px 6px 8px;
   scrollbar-width: none;
+  animation: screen-rail-arrive 720ms 70ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .screen-poster-rail::-webkit-scrollbar { display: none; }
+
+@keyframes screen-rail-arrive {
+  from { opacity: 0; transform: translate3d(18px, 0, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
 
 .screen-poster-rail button {
   position: relative;
@@ -2277,7 +2407,21 @@ button {
 
   .screen-stage { padding: 15px 18px 12px; }
   .panel-favorites[data-detail="true"] .screen-stage { padding-top: 58px; }
-  .screen-kinds button { padding: 6px 10px; font-size: 6px; }
+  .screen-kinds { gap: 7px; }
+  .screen-kinds button {
+    grid-template-columns: 1fr auto;
+    gap: 5px;
+    min-height: 50px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    backdrop-filter: blur(16px) saturate(1.2);
+  }
+  .screen-kind-index { display: none; }
+  .screen-kind-copy { gap: 3px; }
+  .screen-kind-copy strong { font-size: clamp(13px, 4.2vw, 17px); }
+  .screen-kind-copy small { font-size: 4px; letter-spacing: 0.09em; }
+  .screen-kinds button > i { width: 5px; height: 5px; }
   .screen-title-block { width: 100%; padding: 12px 0; }
   .screen-title-block > span { font-size: 5px; }
   .screen-title-block h3 { max-width: 10em; margin-top: 8px; font-size: clamp(34px, 11.5vw, 58px); }

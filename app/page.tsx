@@ -1037,6 +1037,11 @@ function ScreenArchive({
 }) {
   const activeItem = items[activeIndex] ?? items[0];
   const globalIndex = screenFavorites.findIndex((item) => item.title === activeItem.title);
+  const screenKinds: Array<{ id: ScreenKind; index: string; label: string; count: number }> = [
+    { id: "电影", index: "01", label: "FILM", count: screenFavorites.filter((item) => item.kind === "电影").length },
+    { id: "电视剧", index: "02", label: "SERIES", count: screenFavorites.filter((item) => item.kind === "电视剧").length },
+    { id: "动漫", index: "03", label: "ANIMATION", count: screenFavorites.filter((item) => item.kind === "动漫").length },
+  ];
 
   return (
     <section className="favorite-archive screen-archive" data-favorite-detail-root tabIndex={-1} aria-label="影视收藏">
@@ -1044,19 +1049,33 @@ function ScreenArchive({
       <span className="screen-shade" aria-hidden="true" />
 
       <div className="screen-stage">
-        <nav className="screen-kinds" aria-label="影视类型">
-          {(["电影", "电视剧", "动漫"] as ScreenKind[]).map((option) => (
-            <button key={option} type="button" data-selected={option === kind} onClick={() => onKindChange(option)}>{option}</button>
+        <nav className="screen-kinds" aria-label="影视类型" role="tablist">
+          {screenKinds.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              role="tab"
+              aria-selected={option.id === kind}
+              data-selected={option.id === kind}
+              onClick={() => onKindChange(option.id)}
+            >
+              <span className="screen-kind-index">{option.index}</span>
+              <span className="screen-kind-copy">
+                <strong>{option.id}</strong>
+                <small>{option.label} · {String(option.count).padStart(2, "0")}</small>
+              </span>
+              <i aria-hidden="true" />
+            </button>
           ))}
         </nav>
 
-        <div className="screen-title-block">
+        <div className="screen-title-block" key={`title-${kind}`}>
           <span>{String(globalIndex + 1).padStart(2, "0")} / {String(screenFavorites.length).padStart(2, "0")} · {activeItem.kind}</span>
           <h3>{activeItem.title}</h3>
           <AnnotationPlaceholder prompt="这里留给你的短评、喜欢的角色，或看完之后仍然没有散去的感受。" />
         </div>
 
-        <div className="screen-poster-rail" aria-label={`${kind}海报列表`}>
+        <div className="screen-poster-rail" key={`rail-${kind}`} aria-label={`${kind}海报列表`}>
           {items.map((item, index) => (
             <button type="button" data-selected={index === activeIndex} key={item.title} onClick={() => onSelect(index)}>
               <img src={item.image} alt={`${item.title}海报`} />
