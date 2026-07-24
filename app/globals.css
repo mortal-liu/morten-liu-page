@@ -1059,6 +1059,11 @@ button {
   grid-template-rows: 0 minmax(0, 1fr);
 }
 
+.panel-story[data-detail="true"] {
+  grid-template-rows: 0 minmax(0, 1fr);
+}
+
+.panel-story[data-detail="true"] > .panel-header,
 .panel-favorites[data-detail="true"] > .panel-header {
   height: 0;
   min-height: 0;
@@ -1190,27 +1195,318 @@ button {
   letter-spacing: -0.07em;
 }
 
-.story-placeholder {
+.story-content {
+  position: relative;
+  overflow: hidden;
+}
+
+.story-index-view,
+.story-detail-view {
+  position: absolute;
+  inset: 0;
+  transition: opacity 480ms ease, visibility 480ms ease;
+}
+
+.story-index-view {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.story-index-view[data-visible="false"],
+.story-detail-view[data-visible="false"] {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.story-index-view[data-visible="true"],
+.story-detail-view[data-visible="true"] {
+  visibility: inherit;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.story-detail-view[data-visible="true"] {
+  animation: story-detail-in 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.panel-story[data-detail="true"] .story-body {
+  display: block;
+  padding: 0;
+}
+
+.panel-story[data-detail="true"] .story-body > aside {
+  display: none;
+}
+
+.panel-story[data-detail="true"] .story-content {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+.story-entry {
   align-self: end;
   display: grid;
   grid-template-columns: 110px minmax(120px, 1fr) minmax(220px, 0.8fr) auto;
   align-items: center;
   gap: 24px;
-  padding: 28px 0 4px;
+  width: 100%;
+  padding: 28px 0 12px;
   border-top: 1px solid currentColor;
+  border-bottom: 0;
+  border-right: 0;
+  border-left: 0;
   border-color: color-mix(in srgb, currentColor 18%, transparent);
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 
-.story-placeholder > span,
-.story-placeholder small {
+.story-entry-number,
+.story-entry-copy small,
+.story-entry-action {
   color: color-mix(in srgb, currentColor 58%, transparent);
   font-size: 7px;
   font-weight: 600;
   letter-spacing: 0.16em;
 }
 
-.story-placeholder i { height: 1px; background: currentColor; opacity: 0.28; }
-.story-placeholder p { margin: 0; font: 400 clamp(18px, 2vw, 28px) / 1.35 Georgia, "Songti SC", serif; }
+.story-entry-rule {
+  height: 1px;
+  background: currentColor;
+  opacity: 0.28;
+  transform-origin: right center;
+  transition: opacity 420ms ease, transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.story-entry-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.story-entry-copy strong {
+  font: 400 clamp(22px, 2.7vw, 40px) / 1 Georgia, "Songti SC", serif;
+}
+
+.story-entry-copy small {
+  line-height: 1.65;
+  letter-spacing: 0.08em;
+}
+
+.story-entry-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+  color: inherit;
+  opacity: 0.66;
+}
+
+.story-entry-action i {
+  font: normal 400 13px/1 Georgia, serif;
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.story-entry:hover .story-entry-rule,
+.story-entry:focus-visible .story-entry-rule {
+  opacity: 0.72;
+  transform: scaleX(0.86);
+}
+
+.story-entry:hover .story-entry-action i,
+.story-entry:focus-visible .story-entry-action i {
+  transform: translate3d(4px, -4px, 0);
+}
+
+.story-article {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  color: #e9e4d7;
+  background:
+    radial-gradient(circle at 82% 7%, rgba(119, 138, 111, 0.13), transparent 28%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px) 0 0 / 72px 72px,
+    #101a13;
+  scrollbar-color: rgba(230, 226, 214, 0.22) transparent;
+  scrollbar-width: thin;
+}
+
+.story-article:focus { outline: none; }
+
+.story-immersive-header {
+  position: sticky;
+  z-index: 8;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 70px;
+  padding: 0 clamp(22px, 4.4vw, 70px);
+  border-bottom: 1px solid rgba(233, 228, 215, 0.13);
+  background: rgba(16, 26, 19, 0.78);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  backdrop-filter: blur(20px) saturate(1.15);
+}
+
+.story-immersive-header p {
+  margin: 0;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+}
+
+.story-immersive-header p span { opacity: 0.5; }
+
+.story-immersive-header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+}
+
+.story-immersive-header button strong { font: inherit; }
+
+.story-immersive-header button > span {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  margin-left: 5px;
+  place-items: center;
+  border: 1px solid rgba(233, 228, 215, 0.45);
+  border-radius: 50%;
+  font: 400 13px/1 Georgia, serif;
+  transition: color 280ms ease, background 280ms ease, transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.story-immersive-header button:hover > span,
+.story-immersive-header button:focus-visible > span {
+  color: #101a13;
+  background: #e9e4d7;
+  transform: translate3d(-4px, 0, 0);
+}
+
+.story-article-layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.72fr) minmax(0, 1fr);
+  gap: clamp(54px, 9vw, 150px);
+  width: min(1260px, calc(100% - 44px));
+  margin: 0 auto;
+  padding: clamp(58px, 9vh, 108px) clamp(10px, 3vw, 42px) clamp(90px, 14vh, 160px);
+}
+
+.story-article-masthead {
+  position: sticky;
+  top: 128px;
+  align-self: start;
+  min-height: 390px;
+  padding-right: clamp(20px, 3vw, 48px);
+  border-right: 1px solid rgba(233, 228, 215, 0.15);
+}
+
+.story-article-masthead > span,
+.story-article-masthead > p {
+  margin: 0;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  line-height: 1.8;
+  opacity: 0.5;
+}
+
+.story-article-masthead h1 {
+  display: grid;
+  gap: 12px;
+  margin: clamp(52px, 9vh, 96px) 0 40px;
+  font: 400 clamp(58px, 7vw, 104px) / 0.88 Georgia, "Songti SC", serif;
+  letter-spacing: -0.075em;
+}
+
+.story-article-masthead h1 small {
+  font: 600 8px/1 Arial, sans-serif;
+  letter-spacing: 0.18em;
+  opacity: 0.48;
+}
+
+.story-article-masthead > i {
+  position: absolute;
+  right: -4px;
+  bottom: 12px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a45c43;
+  box-shadow: 0 0 0 6px rgba(164, 92, 67, 0.08);
+}
+
+.story-article-copy {
+  width: min(100%, 720px);
+}
+
+.story-article-copy > p {
+  margin: 0 0 1.55em;
+  color: rgba(233, 228, 215, 0.82);
+  font: 400 clamp(15px, 1.15vw, 18px) / 2 Georgia, "Songti SC", "Noto Serif SC", serif;
+  letter-spacing: 0.025em;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
+.story-article-copy > .story-article-deck {
+  margin: 0 0 clamp(56px, 8vh, 92px);
+  padding: 0 0 32px;
+  border-bottom: 1px solid rgba(233, 228, 215, 0.15);
+  color: #f3eee1;
+  font-size: clamp(23px, 2.55vw, 38px);
+  line-height: 1.55;
+  letter-spacing: -0.025em;
+  text-align: left;
+}
+
+.story-article-copy > p[data-emphasis="true"] {
+  margin: clamp(48px, 7vh, 82px) 0;
+  padding: clamp(25px, 4vh, 42px) 0 clamp(25px, 4vh, 42px) clamp(22px, 3vw, 42px);
+  border-top: 1px solid rgba(233, 228, 215, 0.15);
+  border-bottom: 1px solid rgba(233, 228, 215, 0.15);
+  border-left: 2px solid rgba(164, 92, 67, 0.82);
+  color: #f0eadc;
+  font-size: clamp(19px, 1.8vw, 27px);
+  line-height: 1.8;
+  text-align: left;
+}
+
+.story-article-copy > .story-section-break {
+  margin-top: clamp(64px, 9vh, 108px);
+}
+
+.story-article-copy footer {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: clamp(76px, 12vh, 140px);
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  opacity: 0.48;
+}
+
+.story-article-copy footer i {
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+}
+
+@keyframes story-detail-in {
+  from { opacity: 0; transform: translate3d(0, 20px, 0) scale(0.994); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
 
 .favorites-body {
   display: block;
@@ -2339,9 +2635,55 @@ button {
   .panel-kicker { margin-bottom: 16px; }
   .panel-body h2 { font-size: 17vw; }
 
-  .story-placeholder { grid-template-columns: 70px 1fr; gap: 14px; }
-  .story-placeholder i, .story-placeholder small { display: none; }
-  .story-placeholder p { font-size: 17px; }
+  .story-entry { grid-template-columns: 70px 1fr; gap: 14px; }
+  .story-entry-rule, .story-entry-copy small { display: none; }
+  .story-entry-copy strong { font-size: 22px; }
+  .story-entry-action { justify-self: end; grid-column: 2; font-size: 6px; }
+
+  .story-immersive-header {
+    min-height: 58px;
+    padding-inline: 18px;
+  }
+  .story-immersive-header p { font-size: 5px; letter-spacing: 0.12em; }
+  .story-immersive-header button { gap: 5px; font-size: 6px; }
+  .story-immersive-header button strong { display: none; }
+  .story-immersive-header button > span { width: 26px; height: 26px; margin-left: 3px; }
+  .story-article-layout {
+    grid-template-columns: 1fr;
+    gap: 42px;
+    width: 100%;
+    padding: 40px 22px 90px;
+  }
+  .story-article-masthead {
+    position: relative;
+    top: auto;
+    min-height: 0;
+    padding: 0 0 30px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(233, 228, 215, 0.15);
+  }
+  .story-article-masthead h1 {
+    margin: 32px 0 24px;
+    font-size: clamp(58px, 20vw, 86px);
+  }
+  .story-article-masthead > i { right: 0; bottom: -4px; }
+  .story-article-copy > p {
+    font-size: 15px;
+    line-height: 1.95;
+    text-align: left;
+  }
+  .story-article-copy > .story-article-deck {
+    margin-bottom: 52px;
+    font-size: clamp(21px, 6.8vw, 29px);
+    line-height: 1.6;
+  }
+  .story-article-copy > p[data-emphasis="true"] {
+    margin-block: 48px;
+    padding: 24px 0 24px 20px;
+    font-size: 18px;
+    line-height: 1.85;
+  }
+  .story-article-copy > .story-section-break { margin-top: 58px; }
 
   .panel-favorites { overflow: hidden; }
   .panel-favorites[data-detail="true"] { grid-template-rows: 0 minmax(0, 1fr); }
