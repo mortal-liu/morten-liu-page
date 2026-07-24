@@ -183,6 +183,23 @@ const storyPrologue = {
   ],
 };
 
+const storyIndexEntries = [
+  {
+    index: "00",
+    title: storyPrologue.title,
+    label: storyPrologue.label,
+    note: "关于记忆、性格，以及为什么要回头理解自己。",
+    available: true,
+  },
+  ...Array.from({ length: 5 }, (_, index) => ({
+    index: String(index + 1).padStart(2, "0"),
+    title: "未命名",
+    label: "TITLE PENDING",
+    note: "尚未写下。",
+    available: false,
+  })),
+];
+
 export default function Home() {
   const [storyIsOpen, setStoryIsOpen] = useState(false);
   const [activeFavorite, setActiveFavorite] = useState<FavoriteId | null>(null);
@@ -905,17 +922,33 @@ export default function Home() {
           <aside data-panel-reveal><span>01 / 04</span><p>LIFE NOTES<br />WITHOUT A TIMELINE</p></aside>
           <div className="story-content" data-story-view={storyIsOpen ? "article" : "index"}>
             <div className="story-index-view" data-visible={!storyIsOpen} aria-hidden={storyIsOpen}>
-              <p className="panel-kicker" data-panel-reveal>PERSONAL HISTORY / 001 ENTRY</p>
+              <p className="panel-kicker" data-panel-reveal>PERSONAL HISTORY / 001—006</p>
               <h2 data-panel-reveal>Story</h2>
-              <button className="story-entry" data-story-entry data-panel-reveal type="button" onClick={openStory}>
-                <span className="story-entry-number">CHAPTER {storyPrologue.index}</span>
-                <span className="story-entry-rule" aria-hidden="true" />
-                <span className="story-entry-copy">
-                  <strong>{storyPrologue.title}</strong>
-                  <small>关于记忆、性格，以及为什么要回头理解自己。</small>
-                </span>
-                <span className="story-entry-action">阅读全文 <i>↗</i></span>
-              </button>
+              <div className="story-entry-list" data-panel-reveal aria-label="Story 文章目录">
+                {storyIndexEntries.map((entry) => (
+                  entry.available ? (
+                    <button
+                      className="story-entry"
+                      data-available="true"
+                      data-story-entry
+                      key={entry.index}
+                      type="button"
+                      onClick={openStory}
+                    >
+                      <StoryEntryContents entry={entry} />
+                    </button>
+                  ) : (
+                    <div
+                      className="story-entry"
+                      data-available="false"
+                      key={entry.index}
+                      aria-label={`第 ${entry.index} 篇，未命名，尚未写下`}
+                    >
+                      <StoryEntryContents entry={entry} />
+                    </div>
+                  )
+                ))}
+              </div>
             </div>
 
             <div className="story-detail-view" data-visible={storyIsOpen} aria-hidden={!storyIsOpen}>
@@ -1223,6 +1256,23 @@ function AnnotationPlaceholder({ prompt }: { prompt: string }) {
       <p>{prompt}</p>
       <i aria-hidden="true" />
     </div>
+  );
+}
+
+function StoryEntryContents({ entry }: { entry: (typeof storyIndexEntries)[number] }) {
+  return (
+    <>
+      <span className="story-entry-number">CHAPTER {entry.index}</span>
+      <span className="story-entry-rule" aria-hidden="true" />
+      <span className="story-entry-copy">
+        <strong>{entry.title}</strong>
+        <small>{entry.note}</small>
+      </span>
+      <span className="story-entry-action">
+        {entry.available ? "阅读全文" : entry.label}
+        <i aria-hidden="true">{entry.available ? "↗" : "—"}</i>
+      </span>
+    </>
   );
 }
 

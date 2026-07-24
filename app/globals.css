@@ -1210,6 +1210,7 @@ button {
 .story-index-view {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
+  min-height: 0;
 }
 
 .story-index-view[data-visible="false"],
@@ -1245,16 +1246,25 @@ button {
   padding: 0;
 }
 
-.story-entry {
+.story-entry-list {
   align-self: end;
+  min-height: 0;
+  overflow-y: auto;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  scrollbar-color: color-mix(in srgb, currentColor 24%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.story-entry {
   display: grid;
   grid-template-columns: 110px minmax(120px, 1fr) minmax(220px, 0.8fr) auto;
   align-items: center;
   gap: 24px;
   width: 100%;
-  padding: 28px 0 12px;
-  border-top: 1px solid currentColor;
-  border-bottom: 0;
+  min-height: clamp(60px, 8vh, 82px);
+  padding: 12px 0;
+  border-top: 0;
+  border-bottom: 1px solid currentColor;
   border-right: 0;
   border-left: 0;
   border-color: color-mix(in srgb, currentColor 18%, transparent);
@@ -1262,6 +1272,20 @@ button {
   background: transparent;
   text-align: left;
   cursor: pointer;
+  transition: color 360ms ease, background 360ms ease, opacity 360ms ease;
+}
+
+.story-entry[data-available="false"] {
+  color: color-mix(in srgb, currentColor 58%, transparent);
+  cursor: default;
+}
+
+.story-entry[data-available="false"] .story-entry-copy strong {
+  font-style: italic;
+}
+
+.story-entry[data-available="false"] .story-entry-rule {
+  opacity: 0.13;
 }
 
 .story-entry-number,
@@ -1283,11 +1307,11 @@ button {
 
 .story-entry-copy {
   display: grid;
-  gap: 8px;
+  gap: 5px;
 }
 
 .story-entry-copy strong {
-  font: 400 clamp(22px, 2.7vw, 40px) / 1 Georgia, "Songti SC", serif;
+  font: 400 clamp(18px, 1.8vw, 28px) / 1 Georgia, "Songti SC", serif;
 }
 
 .story-entry-copy small {
@@ -1306,6 +1330,11 @@ button {
 .story-entry-action i {
   font: normal 400 13px/1 Georgia, serif;
   transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.story-entry[data-available="true"]:hover,
+.story-entry[data-available="true"]:focus-visible {
+  background: linear-gradient(90deg, rgba(233, 228, 215, 0.035), transparent 78%);
 }
 
 .story-entry:hover .story-entry-rule,
@@ -2635,10 +2664,17 @@ button {
   .panel-kicker { margin-bottom: 16px; }
   .panel-body h2 { font-size: 17vw; }
 
-  .story-entry { grid-template-columns: 70px 1fr; gap: 14px; }
+  .story-entry-list { margin-top: 28px; overflow: visible; }
+  .story-entry {
+    grid-template-columns: 76px minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 64px;
+    padding-block: 10px;
+  }
   .story-entry-rule, .story-entry-copy small { display: none; }
-  .story-entry-copy strong { font-size: 22px; }
-  .story-entry-action { justify-self: end; grid-column: 2; font-size: 6px; }
+  .story-entry-copy strong { font-size: 20px; }
+  .story-entry-action { justify-self: end; font-size: 5px; letter-spacing: 0.1em; }
+  .story-entry-action i { display: none; }
 
   .story-immersive-header {
     min-height: 58px;
