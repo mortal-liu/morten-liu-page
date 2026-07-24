@@ -2101,6 +2101,214 @@ button {
 .music-track-list button strong { font: 400 clamp(18px, 1.8vw, 28px) / 1.1 Georgia, "Songti SC", serif; }
 .music-track-list button small { opacity: 0.5; }
 
+/* Music — artist-led archive */
+.music-room {
+  grid-template-columns: minmax(240px, 0.82fr) minmax(300px, 1.06fr) minmax(280px, 0.92fr);
+  gap: clamp(30px, 4vw, 68px);
+}
+
+.music-artist-panel {
+  position: relative;
+  width: min(28vw, 350px);
+  max-width: 100%;
+  margin: 0;
+}
+
+.music-artist-frame {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid rgba(243, 238, 226, 0.24);
+  box-shadow: 0 34px 80px rgba(0, 0, 0, 0.42);
+}
+
+.music-artist-frame::before,
+.music-artist-frame::after {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  content: "";
+}
+
+.music-artist-frame::before {
+  inset: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.music-artist-frame::after {
+  inset: auto 0 0;
+  height: 40%;
+  background: linear-gradient(transparent, rgba(5, 8, 6, 0.68));
+}
+
+.music-artist-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
+  filter: contrast(1.02) brightness(0.9);
+  transform: scale(1.015);
+}
+
+.music-artist-frame > span {
+  position: absolute;
+  z-index: 3;
+  right: 17px;
+  bottom: 14px;
+  color: rgba(243, 238, 226, 0.82);
+  font: 400 clamp(28px, 3vw, 46px) / 1 Georgia, serif;
+  letter-spacing: -0.06em;
+}
+
+.music-artist-panel > p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 0;
+  font-size: 6px;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  opacity: 0.48;
+}
+
+.music-artist-panel > p small { font: inherit; }
+.music-artist-profile { min-width: 0; }
+
+.music-artist-heading > p {
+  margin: 0 0 18px;
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  opacity: 0.52;
+}
+
+.music-artist-heading h3 {
+  margin: 0;
+  font: 400 clamp(54px, 7vw, 108px) / 0.78 Georgia, "Times New Roman", serif;
+  letter-spacing: -0.085em;
+}
+
+.music-artist-heading > span {
+  display: block;
+  margin-top: 18px;
+  color: rgba(243, 238, 226, 0.64);
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+}
+
+.music-selected-track {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  margin-top: clamp(24px, 4vh, 42px);
+  padding: 16px 0;
+  border-top: 1px solid rgba(243, 238, 226, 0.16);
+  border-bottom: 1px solid rgba(243, 238, 226, 0.12);
+  animation: music-copy-in 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.music-selected-cover {
+  position: relative;
+  width: 74px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.music-selected-cover img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.04);
+  transition: opacity 420ms ease, transform 620ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.music-selected-cover img[data-active="true"] {
+  z-index: 1;
+  opacity: 1;
+  transform: scale(1);
+}
+
+.music-selected-track > div:last-child { min-width: 0; }
+
+.music-selected-track p {
+  margin: 0 0 7px;
+  font-size: 6px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  opacity: 0.5;
+}
+
+.music-selected-track h4 {
+  margin: 0;
+  font: 400 clamp(23px, 2.4vw, 36px) / 1 Georgia, "Songti SC", serif;
+}
+
+.music-selected-track > div:last-child > span {
+  display: block;
+  margin-top: 7px;
+  overflow: hidden;
+  color: rgba(243, 238, 226, 0.56);
+  font-size: 7px;
+  letter-spacing: 0.07em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-artist-profile .annotation-placeholder { margin-top: clamp(18px, 3vh, 32px); }
+
+.music-track-list button {
+  grid-template-columns: 23px 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: clamp(12px, 1.8vh, 18px) 2px;
+}
+
+.music-track-list button > img {
+  display: block;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  filter: grayscale(0.35) brightness(0.72);
+  transition: filter 320ms ease;
+}
+
+.music-track-list button:hover > img,
+.music-track-list button:focus-visible > img,
+.music-track-list button[data-selected="true"] > img { filter: grayscale(0) brightness(0.96); }
+
+.music-track-list button > span:first-child,
+.music-track-list button small {
+  font-size: 6px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+}
+
+.music-track-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.music-track-copy strong { font: 400 clamp(17px, 1.55vw, 24px) / 1.1 Georgia, "Songti SC", serif; }
+
+.music-track-copy small {
+  overflow: hidden;
+  opacity: 0.46;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-track-list button > small:last-child { opacity: 0.5; }
+
 /* Screen — posters and a private cinema */
 .screen-archive { color: var(--paper); background: #090d0a; }
 
@@ -2567,13 +2775,15 @@ button {
   .panel-body { grid-template-columns: 110px minmax(0, 1fr); }
   .story-content, .favorites-content, .pictures-content, .thinking-content { padding-left: 34px; }
   .favorites-content { padding-left: 0; }
-  .music-room { grid-template-columns: minmax(190px, 0.72fr) minmax(250px, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 24px 38px; padding: 28px 38px; }
-  .music-art-stage { width: min(30vw, 270px); }
+  .music-room { grid-template-columns: minmax(190px, 0.7fr) minmax(280px, 1.3fr); grid-template-rows: minmax(0, 1fr) auto; gap: 24px 38px; padding: 28px 38px; }
+  .music-artist-panel { width: min(29vw, 250px); }
   .music-track-list { grid-column: 1 / -1; grid-template-columns: repeat(3, 1fr); align-self: end; }
   .music-track-list li { border-right: 1px solid rgba(243, 238, 226, 0.16); }
   .music-track-list li:last-child { border-right: 0; }
-  .music-track-list button { grid-template-columns: 22px 1fr; padding: 13px 10px; }
-  .music-track-list button small { display: none; }
+  .music-track-list button { grid-template-columns: 20px 36px minmax(0, 1fr); padding: 11px 8px; }
+  .music-track-list button > img { width: 36px; height: 36px; }
+  .music-track-list button > small:last-child,
+  .music-track-copy small { display: none; }
   .book-desk { grid-template-columns: minmax(170px, 0.72fr) minmax(180px, 0.72fr) minmax(230px, 1fr); gap: 28px; padding-inline: 34px; }
   .book-cover-stage { width: min(24vw, 230px); }
 }
@@ -2759,29 +2969,37 @@ button {
   .annotation-placeholder p { font-size: 9px; line-height: 1.5; }
 
   .music-room {
-    grid-template-columns: minmax(118px, 40vw) minmax(0, 1fr);
+    grid-template-columns: minmax(96px, 31vw) minmax(0, 1fr);
     grid-template-rows: minmax(0, 1fr) auto;
     align-items: center;
     gap: 14px 18px;
     padding: 18px;
   }
   .panel-favorites[data-detail="true"] .music-room { padding-top: 62px; }
-  .music-art-stage { width: 100%; }
-  .music-vinyl { right: -15%; }
-  .music-art-stage > small { margin-top: 8px; font-size: 4px; }
-  .music-information-copy > p { margin-bottom: 8px; font-size: 5px; }
-  .music-information-copy h3 { font-size: clamp(32px, 10vw, 48px); }
-  .music-information-copy > span { margin-top: 8px; font-size: 7px; line-height: 1.4; }
-  .music-information .annotation-placeholder { margin-top: 14px; }
-  .music-information .annotation-placeholder p { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .music-artist-panel { width: 100%; }
+  .music-artist-panel > p { margin-top: 7px; font-size: 4px; }
+  .music-artist-panel > p small { display: none; }
+  .music-artist-frame > span { right: 9px; bottom: 8px; font-size: 24px; }
+  .music-artist-heading > p { margin-bottom: 8px; font-size: 5px; }
+  .music-artist-heading h3 { font-size: clamp(38px, 13vw, 58px); }
+  .music-artist-heading > span { margin-top: 8px; font-size: 5px; line-height: 1.4; letter-spacing: 0.1em; }
+  .music-selected-track { grid-template-columns: 50px minmax(0, 1fr); gap: 11px; margin-top: 14px; padding: 10px 0; }
+  .music-selected-cover { width: 50px; }
+  .music-selected-track p { margin-bottom: 4px; font-size: 4px; }
+  .music-selected-track h4 { font-size: 20px; }
+  .music-selected-track > div:last-child > span { margin-top: 4px; font-size: 5px; }
+  .music-artist-profile .annotation-placeholder { margin-top: 12px; }
+  .music-artist-profile .annotation-placeholder p { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .music-track-list { grid-column: 1 / -1; grid-template-columns: 1fr; }
   .music-track-list li { border-right: 0; }
-  .music-track-list button { grid-template-columns: 24px 1fr auto; padding: 10px 4px; }
+  .music-track-list button { grid-template-columns: 22px 34px minmax(0, 1fr) auto; padding: 8px 4px; }
+  .music-track-list button > img { width: 34px; height: 34px; }
   .music-track-list button:hover,
   .music-track-list button:focus-visible,
   .music-track-list button[data-selected="true"] { transform: translate3d(4px, 0, 0); }
-  .music-track-list button strong { font-size: 16px; }
-  .music-track-list button small { display: block; font-size: 4px; }
+  .music-track-copy strong { font-size: 16px; }
+  .music-track-copy small { display: none; }
+  .music-track-list button > small:last-child { display: block; font-size: 4px; }
 
   .screen-stage { padding: 15px 18px 12px; }
   .panel-favorites[data-detail="true"] .screen-stage { padding-top: 58px; }

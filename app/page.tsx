@@ -135,6 +135,16 @@ const musicFavorites = [
   },
 ];
 
+const musicArtists = [
+  {
+    index: "01",
+    name: "ASEN",
+    chineseName: "艾志恒",
+    image: "/favorites/music/artists/asen-portrait.png",
+    tracks: musicFavorites,
+  },
+];
+
 type ScreenKind = "电影" | "电视剧" | "动漫";
 
 const screenFavorites: Array<{ title: string; kind: ScreenKind; image: string }> = [
@@ -260,8 +270,11 @@ export default function Home() {
       })
     );
 
-    const priorityScreenSources = screenFavorites.slice(0, 2).map((item) => item.image);
-    preloadedFavoriteImagesRef.current = preloadImages(priorityScreenSources, "high");
+    const priorityFavoriteSources = [
+      ...screenFavorites.slice(0, 2).map((item) => item.image),
+      musicArtists[0].image,
+    ];
+    preloadedFavoriteImagesRef.current = preloadImages(priorityFavoriteSources, "high");
 
     const preloadTimer = window.setTimeout(() => {
       const deferredSources = [
@@ -1081,6 +1094,7 @@ function MusicArchive({
   onSelect: (index: number) => void;
 }) {
   const activeItem = musicFavorites[activeIndex] ?? musicFavorites[0];
+  const activeArtist = musicArtists[0];
 
   return (
     <section className="favorite-archive music-archive" data-favorite-detail-root tabIndex={-1} aria-label="音乐收藏">
@@ -1090,39 +1104,52 @@ function MusicArchive({
         ))}
       </div>
       <div className="music-room">
-        <div className="music-art-stage">
-          <span className="music-vinyl" aria-hidden="true"><i /></span>
-          <div className="music-cover-stack">
-            {musicFavorites.map((item, index) => (
-              <img
-                key={item.title}
-                data-active={index === activeIndex}
-                src={item.image}
-                alt={index === activeIndex ? `${item.title}封面` : ""}
-                aria-hidden={index !== activeIndex}
-                decoding="async"
-              />
-            ))}
+        <aside className="music-artist-panel" aria-label={`歌手 ${activeArtist.chineseName} ${activeArtist.name}`}>
+          <div className="music-artist-frame">
+            <img src={activeArtist.image} alt={`${activeArtist.chineseName} ${activeArtist.name} 黑白肖像`} fetchPriority="high" />
+            <span aria-hidden="true">{activeArtist.index}</span>
           </div>
-          <small>ASEN / PERSONAL ROTATION</small>
-        </div>
+          <p><span>ARTIST {activeArtist.index}</span><small>PORTRAIT ARCHIVE</small></p>
+        </aside>
 
-        <div className="music-information">
-          <div className="music-information-copy" key={activeItem.title}>
-            <p>NOW SELECTED / {String(activeIndex + 1).padStart(2, "0")}</p>
-            <h3>{activeItem.title}</h3>
-            <span>{activeItem.artist}</span>
+        <div className="music-artist-profile">
+          <div className="music-artist-heading">
+            <p>ARTIST INDEX / {activeArtist.index} OF {String(musicArtists.length).padStart(2, "0")}</p>
+            <h3>{activeArtist.name}</h3>
+            <span>{activeArtist.chineseName} · {String(activeArtist.tracks.length).padStart(2, "0")} TRACKS IN ARCHIVE</span>
           </div>
+
+          <div className="music-selected-track" key={activeItem.title}>
+            <div className="music-selected-cover">
+              {musicFavorites.map((item, index) => (
+                <img
+                  key={item.title}
+                  data-active={index === activeIndex}
+                  src={item.image}
+                  alt={index === activeIndex ? `${item.title}封面` : ""}
+                  aria-hidden={index !== activeIndex}
+                  decoding="async"
+                />
+              ))}
+            </div>
+            <div>
+              <p>NOW SELECTED / TRACK {String(activeIndex + 1).padStart(2, "0")}</p>
+              <h4>{activeItem.title}</h4>
+              <span>{activeItem.artist}</span>
+            </div>
+          </div>
+
           <AnnotationPlaceholder prompt="在这里写下它为什么会被你反复播放，或某一句留下来的歌词。" />
         </div>
 
-        <ol className="music-track-list" aria-label="Asen 歌曲列表">
+        <ol className="music-track-list" aria-label={`${activeArtist.chineseName} ${activeArtist.name} 歌曲列表`}>
           {musicFavorites.map((item, index) => (
             <li key={item.title}>
               <button type="button" data-selected={index === activeIndex} onClick={() => onSelect(index)}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
-                <strong>{item.title}</strong>
-                <small>{index === activeIndex ? "SELECTED" : "PLAY NOTE"}</small>
+                <img src={item.image} alt="" aria-hidden="true" decoding="async" />
+                <span className="music-track-copy"><strong>{item.title}</strong><small>{item.artist}</small></span>
+                <small>{index === activeIndex ? "SELECTED" : "VIEW TRACK"}</small>
               </button>
             </li>
           ))}
