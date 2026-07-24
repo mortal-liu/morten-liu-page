@@ -1093,68 +1093,119 @@ function MusicArchive({
   activeIndex: number;
   onSelect: (index: number) => void;
 }) {
+  const [activeArtistIndex, setActiveArtistIndex] = useState<number | null>(null);
   const activeItem = musicFavorites[activeIndex] ?? musicFavorites[0];
-  const activeArtist = musicArtists[0];
+  const activeArtist = musicArtists[activeArtistIndex ?? 0];
 
   return (
-    <section className="favorite-archive music-archive" data-favorite-detail-root tabIndex={-1} aria-label="音乐收藏">
-      <div className="music-ambient-stack" aria-hidden="true">
-        {musicFavorites.map((item, index) => (
-          <img key={item.title} data-active={index === activeIndex} src={item.image} alt="" decoding="async" />
-        ))}
-      </div>
-      <div className="music-room">
-        <aside className="music-artist-panel" aria-label={`歌手 ${activeArtist.chineseName} ${activeArtist.name}`}>
-          <div className="music-artist-frame">
-            <img src={activeArtist.image} alt={`${activeArtist.chineseName} ${activeArtist.name} 黑白肖像`} fetchPriority="high" />
-            <span aria-hidden="true">{activeArtist.index}</span>
-          </div>
-          <p><span>ARTIST {activeArtist.index}</span><small>PORTRAIT ARCHIVE</small></p>
-        </aside>
+    <section
+      className="favorite-archive music-archive"
+      data-favorite-detail-root
+      data-stage={activeArtistIndex === null ? "artists" : "tracks"}
+      tabIndex={-1}
+      aria-label="音乐收藏"
+    >
+      {activeArtistIndex === null ? (
+        <div className="music-artist-lobby">
+          <header className="music-lobby-heading">
+            <p>ARTIST INDEX / PERSONAL LISTENING ARCHIVE</p>
+            <h3>Artists</h3>
+            <span>选择一位歌手，沿着他的声音继续向里走。</span>
+          </header>
 
-        <div className="music-artist-profile">
-          <div className="music-artist-heading">
-            <p>ARTIST INDEX / {activeArtist.index} OF {String(musicArtists.length).padStart(2, "0")}</p>
-            <h3>{activeArtist.name}</h3>
-            <span>{activeArtist.chineseName} · {String(activeArtist.tracks.length).padStart(2, "0")} TRACKS IN ARCHIVE</span>
-          </div>
-
-          <div className="music-selected-track" key={activeItem.title}>
-            <div className="music-selected-cover">
-              {musicFavorites.map((item, index) => (
-                <img
-                  key={item.title}
-                  data-active={index === activeIndex}
-                  src={item.image}
-                  alt={index === activeIndex ? `${item.title}封面` : ""}
-                  aria-hidden={index !== activeIndex}
-                  decoding="async"
-                />
-              ))}
-            </div>
-            <div>
-              <p>NOW SELECTED / TRACK {String(activeIndex + 1).padStart(2, "0")}</p>
-              <h4>{activeItem.title}</h4>
-              <span>{activeItem.artist}</span>
-            </div>
-          </div>
-
-          <AnnotationPlaceholder prompt="在这里写下它为什么会被你反复播放，或某一句留下来的歌词。" />
-        </div>
-
-        <ol className="music-track-list" aria-label={`${activeArtist.chineseName} ${activeArtist.name} 歌曲列表`}>
-          {musicFavorites.map((item, index) => (
-            <li key={item.title}>
-              <button type="button" data-selected={index === activeIndex} onClick={() => onSelect(index)}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <img src={item.image} alt="" aria-hidden="true" decoding="async" />
-                <span className="music-track-copy"><strong>{item.title}</strong><small>{item.artist}</small></span>
-                <small>{index === activeIndex ? "SELECTED" : "VIEW TRACK"}</small>
+          <div className="music-artist-board" aria-label="歌手索引">
+            {musicArtists.map((artist, index) => (
+              <button
+                className="music-artist-card"
+                key={artist.name}
+                type="button"
+                onClick={() => setActiveArtistIndex(index)}
+                aria-label={`打开歌手 ${artist.chineseName} ${artist.name} 的歌曲档案`}
+              >
+                <span className="music-artist-card-frame">
+                  <img src={artist.image} alt="" aria-hidden="true" fetchPriority="high" />
+                  <i aria-hidden="true" />
+                  <b aria-hidden="true">{artist.index}</b>
+                </span>
+                <span className="music-artist-card-copy">
+                  <small>ARTIST {artist.index}</small>
+                  <strong>{artist.name}</strong>
+                  <span>{artist.chineseName} · {String(artist.tracks.length).padStart(2, "0")} TRACKS</span>
+                </span>
+                <span className="music-artist-card-action">ENTER ARCHIVE <i aria-hidden="true">↗</i></span>
               </button>
-            </li>
-          ))}
-        </ol>
-      </div>
+            ))}
+          </div>
+
+          <footer className="music-lobby-footer">
+            <span>{String(musicArtists.length).padStart(2, "0")} ARTIST IN ARCHIVE</span>
+            <span>MOVE / HOVER / ENTER</span>
+          </footer>
+        </div>
+      ) : (
+        <>
+          <div className="music-ambient-stack" aria-hidden="true">
+            {activeArtist.tracks.map((item, index) => (
+              <img key={item.title} data-active={index === activeIndex} src={item.image} alt="" decoding="async" />
+            ))}
+          </div>
+
+          <div className="music-room">
+            <button className="music-back-to-artists" type="button" onClick={() => setActiveArtistIndex(null)}>
+              <span aria-hidden="true">←</span> ARTIST INDEX
+            </button>
+
+            <aside className="music-artist-panel" aria-label={`歌手 ${activeArtist.chineseName} ${activeArtist.name}`}>
+              <div className="music-artist-frame">
+                <img src={activeArtist.image} alt={`${activeArtist.chineseName} ${activeArtist.name} 黑白肖像`} fetchPriority="high" />
+                <span aria-hidden="true">{activeArtist.index}</span>
+              </div>
+              <p><span>ARTIST {activeArtist.index}</span><small>PORTRAIT ARCHIVE</small></p>
+            </aside>
+
+            <div className="music-artist-profile">
+              <div className="music-artist-heading">
+                <p>{activeArtist.name} / SELECTED TRACK</p>
+                <h3>{activeItem.title}</h3>
+                <span>{activeItem.artist}</span>
+              </div>
+
+              <div className="music-selected-track">
+                <div className="music-selected-cover">
+                  {activeArtist.tracks.map((item, index) => (
+                    <img
+                      key={item.title}
+                      data-active={index === activeIndex}
+                      src={item.image}
+                      alt={index === activeIndex ? `${item.title}封面` : ""}
+                      aria-hidden={index !== activeIndex}
+                      decoding="async"
+                    />
+                  ))}
+                </div>
+                <div className="music-selected-index">
+                  <p>TRACK {String(activeIndex + 1).padStart(2, "0")} / {String(activeArtist.tracks.length).padStart(2, "0")}</p>
+                  <span>{activeArtist.chineseName} · {activeArtist.name}</span>
+                </div>
+              </div>
+
+              <AnnotationPlaceholder prompt="在这里写下它为什么会被你反复播放，或某一句留下来的歌词。" />
+            </div>
+
+            <ol className="music-track-list" aria-label={`${activeArtist.chineseName} ${activeArtist.name} 歌曲列表`}>
+              {activeArtist.tracks.map((item, index) => (
+                <li key={item.title}>
+                  <button type="button" data-selected={index === activeIndex} onClick={() => onSelect(index)}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <span className="music-track-copy"><strong>{item.title}</strong><small>{item.artist}</small></span>
+                    <small>{index === activeIndex ? "PLAYING" : "SELECT"}</small>
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </>
+      )}
     </section>
   );
 }
