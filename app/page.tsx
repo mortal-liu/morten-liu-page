@@ -136,6 +136,15 @@ const musicFavorites = [
   },
 ];
 
+const musicAlbums = [
+  {
+    title: "在雨后醒来",
+    artist: "艾志恒Asen",
+    image: "/quotes/after-rain.jpg",
+    meta: "ALBUM / PERSONAL SELECTION",
+  },
+];
+
 const musicArtists = [
   {
     index: "01",
@@ -143,6 +152,7 @@ const musicArtists = [
     chineseName: "艾志恒",
     image: "/favorites/music/artists/asen-portrait.png",
     tracks: musicFavorites,
+    albums: musicAlbums,
   },
   {
     index: "02",
@@ -150,6 +160,7 @@ const musicArtists = [
     chineseName: "J. Cole",
     image: "/favorites/music/artists/j-cole.jpg",
     tracks: [],
+    albums: [],
   },
   {
     index: "03",
@@ -157,6 +168,7 @@ const musicArtists = [
     chineseName: "Kanye West",
     image: "/favorites/music/artists/kanye-west.jpg",
     tracks: [],
+    albums: [],
   },
   {
     index: "04",
@@ -164,6 +176,7 @@ const musicArtists = [
     chineseName: "Kendrick Lamar",
     image: "/favorites/music/artists/kendrick-lamar.jpg",
     tracks: [],
+    albums: [],
   },
 ];
 
@@ -317,6 +330,7 @@ export default function Home() {
       const deferredSources = [
         ...screenFavorites.slice(2),
         ...musicFavorites,
+        ...musicAlbums,
         ...bookFavorites,
       ].map((item) => item.image);
       preloadedFavoriteImagesRef.current.push(...preloadImages(deferredSources, "low"));
@@ -1221,8 +1235,12 @@ function MusicArchive({
   onArtistSelect: (index: number | null) => void;
   onSelect: (index: number) => void;
 }) {
+  const [workMode, setWorkMode] = useState<"tracks" | "albums">("tracks");
+  const [activeAlbumIndex, setActiveAlbumIndex] = useState(0);
   const activeArtist = musicArtists[activeArtistIndex ?? 0];
-  const activeItem = activeArtist.tracks[activeIndex] ?? null;
+  const activeTrack = activeArtist.tracks[activeIndex] ?? null;
+  const activeAlbum = activeArtist.albums[activeAlbumIndex] ?? null;
+  const activeWorks = workMode === "tracks" ? activeArtist.tracks : activeArtist.albums;
 
   return (
     <section
@@ -1247,8 +1265,13 @@ function MusicArchive({
                 data-music-artist-card
                 key={artist.name}
                 type="button"
-                onClick={() => onArtistSelect(index)}
-                aria-label={`打开歌手 ${artist.chineseName} ${artist.name} 的歌曲档案`}
+                onClick={() => {
+                  setWorkMode("tracks");
+                  setActiveAlbumIndex(0);
+                  onSelect(0);
+                  onArtistSelect(index);
+                }}
+                aria-label={`打开歌手 ${artist.chineseName} ${artist.name} 的音乐档案`}
               >
                 <span className="music-artist-card-frame">
                   <img src={artist.image} alt="" aria-hidden="true" fetchPriority="high" />
@@ -1258,7 +1281,9 @@ function MusicArchive({
                 <span className="music-artist-card-copy">
                   <small>ARTIST {artist.index}</small>
                   <strong>{artist.name}</strong>
-                  <span>{artist.chineseName} · {String(artist.tracks.length).padStart(2, "0")} TRACKS</span>
+                  <span>
+                    {artist.chineseName} · {String(artist.tracks.length).padStart(2, "0")} TRACKS · {String(artist.albums.length).padStart(2, "0")} ALBUMS
+                  </span>
                 </span>
                 <span className="music-artist-card-action">ENTER ARCHIVE <i aria-hidden="true">↗</i></span>
               </button>
@@ -1273,9 +1298,15 @@ function MusicArchive({
       ) : (
         <>
           <div className="music-ambient-stack" aria-hidden="true">
-            {activeArtist.tracks.length > 0 ? (
-              activeArtist.tracks.map((item, index) => (
-                <img key={item.title} data-active={index === activeIndex} src={item.image} alt="" decoding="async" />
+            {activeWorks.length > 0 ? (
+              activeWorks.map((item, index) => (
+                <img
+                  key={`${workMode}-${item.title}`}
+                  data-active={index === (workMode === "tracks" ? activeIndex : activeAlbumIndex)}
+                  src={item.image}
+                  alt=""
+                  decoding="async"
+                />
               ))
             ) : (
               <img data-active="true" src={activeArtist.image} alt="" decoding="async" />
@@ -1295,12 +1326,12 @@ function MusicArchive({
               <p><span>ARTIST {activeArtist.index}</span><small>PORTRAIT ARCHIVE</small></p>
             </aside>
 
-            {activeItem ? (
-              <div className="music-artist-profile">
+            {workMode === "tracks" && activeTrack ? (
+              <div className="music-artist-profile" key={`track-${activeTrack.title}`}>
                 <div className="music-artist-heading">
                   <p>{activeArtist.name} / SELECTED TRACK</p>
-                  <h3>{activeItem.title}</h3>
-                  <span>{activeItem.artist}</span>
+                  <h3>{activeTrack.title}</h3>
+                  <span>{activeTrack.artist}</span>
                 </div>
 
                 <div className="music-selected-track">
@@ -1324,38 +1355,107 @@ function MusicArchive({
 
                 <AnnotationPlaceholder prompt="在这里写下它为什么会被你反复播放，或某一句留下来的歌词。" />
               </div>
+            ) : workMode === "albums" && activeAlbum ? (
+              <div className="music-artist-profile music-album-profile" key={`album-${activeAlbum.title}`}>
+                <div className="music-artist-heading">
+                  <p>{activeArtist.name} / SELECTED ALBUM</p>
+                  <h3>{activeAlbum.title}</h3>
+                  <span>{activeAlbum.artist}</span>
+                </div>
+
+                <div className="music-selected-track" data-work-type="album">
+                  <div className="music-selected-cover">
+                    {activeArtist.albums.map((album, index) => (
+                      <img
+                        key={album.title}
+                        data-active={index === activeAlbumIndex}
+                        src={album.image}
+                        alt={index === activeAlbumIndex ? `《${album.title}》专辑封面` : ""}
+                        aria-hidden={index !== activeAlbumIndex}
+                        decoding="async"
+                      />
+                    ))}
+                  </div>
+                  <div className="music-selected-index">
+                    <p>ALBUM {String(activeAlbumIndex + 1).padStart(2, "0")} / {String(activeArtist.albums.length).padStart(2, "0")}</p>
+                    <span>{activeAlbum.meta}</span>
+                  </div>
+                </div>
+
+                <AnnotationPlaceholder prompt="在这里写下这张专辑的整体气质、它最打动你的部分，以及你最推荐的三首歌。" />
+              </div>
             ) : (
               <div className="music-empty-profile">
-                <p>ARTIST ARCHIVE / CONTENT PENDING</p>
+                <p>ARTIST ARCHIVE / {workMode === "tracks" ? "TRACKS" : "ALBUMS"} PENDING</p>
                 <h3>{activeArtist.name}</h3>
                 <span>{activeArtist.chineseName}</span>
                 <div>
-                  <small>00 / TRACKS</small>
+                  <small>00 / {workMode === "tracks" ? "TRACKS" : "ALBUMS"}</small>
                   <strong>内容待补充</strong>
-                  <p>这里以后会放入你选择的歌曲、介绍与自己的注解。</p>
+                  <p>
+                    这里以后会放入你选择的{workMode === "tracks" ? "歌曲" : "专辑"}、介绍与自己的注解。
+                  </p>
                 </div>
               </div>
             )}
 
-            {activeArtist.tracks.length > 0 ? (
-              <ol className="music-track-list" aria-label={`${activeArtist.chineseName} ${activeArtist.name} 歌曲列表`}>
-                {activeArtist.tracks.map((item, index) => (
-                  <li key={item.title}>
-                    <button type="button" data-selected={index === activeIndex} onClick={() => onSelect(index)}>
-                      <span>{String(index + 1).padStart(2, "0")}</span>
-                      <span className="music-track-copy"><strong>{item.title}</strong><small>{item.artist}</small></span>
-                      <small>{index === activeIndex ? "PLAYING" : "SELECT"}</small>
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <aside className="music-empty-track-list" aria-label={`${activeArtist.name} 暂无歌曲`}>
-                <span>TRACK INDEX</span>
-                <strong>00</strong>
-                <p>SONGS WILL<br />BE ADDED LATER</p>
-              </aside>
-            )}
+            <div className="music-library-panel" data-work-mode={workMode}>
+              <div className="music-work-switch" role="tablist" aria-label="音乐作品类型">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={workMode === "tracks"}
+                  data-active={workMode === "tracks"}
+                  onClick={() => setWorkMode("tracks")}
+                >
+                  <span>单曲</span><small>{String(activeArtist.tracks.length).padStart(2, "0")}</small>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={workMode === "albums"}
+                  data-active={workMode === "albums"}
+                  onClick={() => setWorkMode("albums")}
+                >
+                  <span>专辑</span><small>{String(activeArtist.albums.length).padStart(2, "0")}</small>
+                </button>
+              </div>
+
+              {workMode === "tracks" && activeArtist.tracks.length > 0 ? (
+                <ol className="music-track-list" aria-label={`${activeArtist.chineseName} ${activeArtist.name} 单曲列表`}>
+                  {activeArtist.tracks.map((item, index) => (
+                    <li key={item.title}>
+                      <button type="button" data-selected={index === activeIndex} onClick={() => onSelect(index)}>
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <span className="music-track-copy"><strong>{item.title}</strong><small>{item.artist}</small></span>
+                        <small>{index === activeIndex ? "SELECTED" : "SELECT"}</small>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              ) : workMode === "albums" && activeArtist.albums.length > 0 ? (
+                <ol className="music-track-list music-album-list" aria-label={`${activeArtist.chineseName} ${activeArtist.name} 专辑列表`}>
+                  {activeArtist.albums.map((album, index) => (
+                    <li key={album.title}>
+                      <button type="button" data-selected={index === activeAlbumIndex} onClick={() => setActiveAlbumIndex(index)}>
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <span className="music-track-copy"><strong>{album.title}</strong><small>{album.artist}</small></span>
+                        <small>{index === activeAlbumIndex ? "SELECTED" : "SELECT"}</small>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <aside
+                  className="music-empty-track-list"
+                  aria-label={`${activeArtist.name} 暂无${workMode === "tracks" ? "单曲" : "专辑"}`}
+                >
+                  <span>{workMode === "tracks" ? "TRACK" : "ALBUM"} INDEX</span>
+                  <strong>00</strong>
+                  <p>{workMode === "tracks" ? "SONGS" : "ALBUMS"} WILL<br />BE ADDED LATER</p>
+                </aside>
+              )}
+            </div>
           </div>
         </>
       )}
