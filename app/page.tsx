@@ -975,8 +975,19 @@ export default function Home() {
           <aside data-panel-reveal><span>01 / 04</span><p>LIFE NOTES<br />WITHOUT A TIMELINE</p></aside>
           <div className="story-content" data-story-view={storyIsOpen ? "article" : "index"}>
             <div className="story-index-view" data-visible={!storyIsOpen} aria-hidden={storyIsOpen}>
-              <p className="panel-kicker" data-panel-reveal>PERSONAL HISTORY / 001—006</p>
-              <h2 data-panel-reveal>Story</h2>
+              <div className="story-index-intro" data-panel-reveal>
+                <p className="panel-kicker">PERSONAL HISTORY / 001—006</p>
+                <h2>Story</h2>
+                <p className="story-index-thesis">向前生活，向后理解。</p>
+                <p className="story-index-description">
+                  记忆不按年份回来。这里收留那些仍然清晰、已经模糊，以及尚未来得及写下的部分。
+                </p>
+                <div className="story-index-status" aria-label="Story 写作进度">
+                  <span><strong>01</strong> WRITTEN</span>
+                  <i aria-hidden="true" />
+                  <span><strong>05</strong> WAITING</span>
+                </div>
+              </div>
               <div className="story-entry-list" data-panel-reveal aria-label="Story 文章目录">
                 {storyIndexEntries.map((entry) => (
                   entry.available ? (
