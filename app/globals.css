@@ -11,6 +11,16 @@
   --clay-soft: #cb7758;
   --moss: #75866c;
   --line: rgba(224, 232, 218, 0.14);
+  --glass: rgba(20, 32, 24, 0.58);
+  --glass-strong: rgba(15, 25, 19, 0.78);
+  --glass-border: rgba(238, 236, 225, 0.15);
+  --glass-highlight: rgba(255, 255, 255, 0.075);
+  --glass-shadow: 0 22px 58px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.075);
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 34px;
+  --spring: cubic-bezier(0.16, 1, 0.3, 1);
   --sans: Inter, "Helvetica Neue", Arial, "PingFang SC", sans-serif;
 }
 
@@ -5322,5 +5332,722 @@ button {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* iOS precision layer: restrained glass, continuous radii and tactile controls */
+::selection {
+  color: var(--forest-deep);
+  background: rgba(211, 223, 203, 0.82);
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button:not(:disabled) {
+  scale: 1;
+}
+
+button:not(:disabled):active {
+  scale: 0.975;
+  filter: brightness(0.94);
+}
+
+.topbar,
+.panel-header {
+  margin: 10px clamp(12px, 1.5vw, 22px) 0;
+  padding-inline: clamp(18px, 3.3vw, 52px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.065), transparent 48%),
+    var(--glass);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(30px) saturate(1.35);
+  backdrop-filter: blur(30px) saturate(1.35);
+}
+
+.topbar {
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.monogram-mark,
+.panel-monogram {
+  border-color: rgba(238, 236, 225, 0.52);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+
+.quote-cover-art {
+  border-color: var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 28px 68px rgba(0, 0, 0, 0.38), inset 0 1px 0 var(--glass-highlight);
+  transform: translateZ(0);
+}
+
+.quote-cover-art::after {
+  border-radius: calc(var(--radius-lg) - 8px);
+}
+
+.quote-tools > div {
+  grid-template-columns: 40px 40px 50px;
+  gap: 8px;
+  max-width: 154px;
+}
+
+.quote-tools button {
+  min-width: 40px;
+  height: 40px;
+  padding-inline: 10px;
+  border-color: var(--glass-border);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07), transparent 52%),
+    rgba(20, 32, 24, 0.48);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 8px 24px rgba(0, 0, 0, 0.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  transition: color 260ms ease, background 360ms var(--spring), border-color 260ms ease, box-shadow 360ms var(--spring);
+}
+
+.portal-nav {
+  gap: 8px;
+  padding: 8px 12px 12px;
+  border-top: 0;
+  background: linear-gradient(180deg, transparent, rgba(7, 13, 9, 0.24));
+}
+
+.portal,
+.portal:last-child {
+  min-height: 76px;
+  padding: 13px clamp(15px, 1.7vw, 26px);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 54%),
+    rgba(20, 32, 24, 0.42);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 12px 32px rgba(0, 0, 0, 0.13);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  transition: color 320ms ease, border-color 360ms ease, box-shadow 480ms var(--spring), transform 480ms var(--spring);
+}
+
+.portal::before {
+  border-radius: inherit;
+  opacity: 0.72;
+}
+
+.portal:hover,
+.portal:focus-visible {
+  border-color: color-mix(in srgb, var(--portal-color) 58%, rgba(238, 236, 225, 0.34));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 18px 42px rgba(0, 0, 0, 0.22);
+  transform: translateY(-3px);
+}
+
+.panel-header button {
+  min-height: 44px;
+  padding: 0 0 0 12px;
+}
+
+.panel-header button span {
+  width: 36px;
+  height: 36px;
+  border-color: rgba(238, 236, 225, 0.32);
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+  transition: transform 420ms var(--spring), background 320ms ease, color 320ms ease, box-shadow 320ms ease;
+}
+
+.panel-story[data-detail="true"] > .panel-header,
+.panel-favorites[data-detail="true"] > .panel-header,
+.panel-thinking[data-detail="true"] > .panel-header {
+  margin: 0;
+  border-radius: 0;
+}
+
+.story-entry,
+.story-feature-entry,
+.story-archive-gate,
+.story-branch-entry {
+  border-color: var(--glass-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 56%),
+    rgba(232, 237, 226, 0.025);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 14px 38px rgba(0, 0, 0, 0.1);
+}
+
+.story-entry:first-child,
+.story-feature-entry {
+  background:
+    radial-gradient(circle at 84% 18%, rgba(148, 164, 135, 0.16), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 58%),
+    rgba(232, 237, 226, 0.032);
+}
+
+.story-archive-gate > i,
+.story-feature-action i {
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.14));
+}
+
+.story-immersive-header p,
+.story-immersive-header button,
+.favorite-immersive-header p,
+.favorite-immersive-header button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07), transparent 54%),
+    rgba(12, 22, 16, 0.48);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 12px 34px rgba(0, 0, 0, 0.18);
+  -webkit-backdrop-filter: blur(24px) saturate(1.28);
+  backdrop-filter: blur(24px) saturate(1.28);
+}
+
+.story-immersive-header p,
+.favorite-immersive-header p {
+  display: flex;
+  align-items: center;
+}
+
+.story-immersive-header button,
+.favorite-immersive-header button {
+  padding-right: 6px;
+}
+
+.favorite-immersive-header[data-tone="dark"] p,
+.favorite-immersive-header[data-tone="dark"] button {
+  border-color: rgba(23, 32, 25, 0.16);
+  background: rgba(245, 242, 233, 0.5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 12px 32px rgba(42, 48, 42, 0.13);
+}
+
+.favorite-categories {
+  gap: 9px;
+  padding: 10px 10px 12px;
+}
+
+.favorite-column,
+.favorite-column:last-child {
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(0, 0, 0, 0.2)),
+    var(--column-tone);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 22px 52px rgba(0, 0, 0, 0.19);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  backdrop-filter: blur(14px) saturate(1.1);
+}
+
+.favorite-column::after {
+  inset: 7px;
+  border-radius: calc(var(--radius-lg) - 7px);
+}
+
+.favorite-column:hover::after,
+.favorite-column:focus-visible::after,
+.favorite-column[data-active="true"]::after {
+  inset: 12px;
+}
+
+.favorite-column-action i {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+
+.annotation-placeholder {
+  gap: 11px;
+  padding: 18px 20px 17px;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, currentColor 5%, transparent), transparent 58%),
+    color-mix(in srgb, currentColor 2.8%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, currentColor 6%, transparent), 0 14px 34px rgba(0, 0, 0, 0.08);
+}
+
+.annotation-placeholder i {
+  right: 14px;
+  bottom: 14px;
+}
+
+.music-back-to-artists {
+  min-height: 44px;
+  padding: 0 15px;
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  background: rgba(15, 25, 19, 0.52);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 12px 30px rgba(0, 0, 0, 0.18);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  backdrop-filter: blur(22px) saturate(1.25);
+}
+
+.music-back-to-artists:hover,
+.music-back-to-artists:focus-visible {
+  border-color: rgba(243, 238, 226, 0.42);
+}
+
+.music-artist-card {
+  padding: 9px 9px 14px;
+  border: 1px solid var(--glass-border);
+  border-radius: 26px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.07), transparent 46%),
+    rgba(19, 31, 23, 0.5);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 22px 54px rgba(0, 0, 0, 0.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.18);
+  backdrop-filter: blur(18px) saturate(1.18);
+}
+
+.music-artist-card-frame,
+.music-artist-frame {
+  overflow: hidden;
+  border-radius: 19px;
+}
+
+.music-artist-card-frame::before {
+  border-color: rgba(243, 238, 226, 0.28);
+  border-radius: 19px;
+}
+
+.music-artist-card-frame::after {
+  border-radius: 12px;
+}
+
+.music-artist-card:hover .music-artist-card-frame::before,
+.music-artist-card:focus-visible .music-artist-card-frame::before {
+  inset: 0;
+}
+
+.music-artist-card:hover .music-artist-card-frame::after,
+.music-artist-card:focus-visible .music-artist-card-frame::after {
+  inset: 13px;
+}
+
+.music-artist-frame::before {
+  border-radius: 12px;
+}
+
+.music-selected-cover,
+.music-cover-stack {
+  border-radius: 22px;
+}
+
+.music-cover-stack img,
+.music-selected-cover img {
+  border-radius: inherit;
+}
+
+.music-work-switch {
+  border-color: var(--glass-border);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 48%),
+    rgba(20, 32, 24, 0.46);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 14px 36px rgba(0, 0, 0, 0.17);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  backdrop-filter: blur(24px) saturate(1.3);
+}
+
+.music-work-switch button {
+  border-radius: 15px;
+}
+
+.music-work-switch button[data-active="true"] {
+  background: linear-gradient(135deg, rgba(225, 235, 218, 0.2), rgba(134, 158, 137, 0.1));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.13), 0 8px 22px rgba(0, 0, 0, 0.17);
+}
+
+.music-track-list {
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--glass-border);
+  border-radius: 22px;
+  background: rgba(15, 25, 19, 0.38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.music-track-list li,
+.music-track-list li:last-child {
+  border: 0;
+}
+
+.music-track-list button {
+  padding-inline: 12px;
+  border-radius: 15px;
+}
+
+.music-track-list button:hover,
+.music-track-list button:focus-visible,
+.music-track-list button[data-selected="true"] {
+  background: rgba(231, 237, 225, 0.075);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+.screen-kinds {
+  gap: clamp(9px, 1.4vw, 20px);
+}
+
+.screen-kinds button {
+  border-radius: 22px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 16px 38px rgba(0, 0, 0, 0.16);
+}
+
+.screen-poster-rail {
+  gap: 14px;
+}
+
+.screen-poster-rail button {
+  border-radius: 17px;
+  box-shadow: 0 13px 34px rgba(0, 0, 0, 0.18);
+}
+
+.screen-poster-rail button[data-selected="true"] {
+  border-color: rgba(222, 231, 216, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(222, 231, 216, 0.36), 0 17px 42px rgba(0, 0, 0, 0.24);
+}
+
+.book-index {
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid rgba(23, 32, 25, 0.12);
+  border-radius: 22px;
+  background: rgba(249, 247, 240, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 18px 42px rgba(48, 54, 48, 0.12);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  backdrop-filter: blur(20px) saturate(1.15);
+}
+
+.book-index > p {
+  padding: 8px 10px 0;
+}
+
+.book-index button,
+.book-index button:last-child {
+  padding: 14px 12px;
+  border: 0;
+  border-radius: 14px;
+}
+
+.book-index button:hover,
+.book-index button:focus-visible,
+.book-index button[data-selected="true"] {
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74), 0 8px 22px rgba(53, 62, 54, 0.08);
+  transform: translate3d(3px, 0, 0);
+}
+
+.book-cover-stack {
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 28px 64px rgba(46, 49, 45, 0.24);
+}
+
+.book-cover-stack img {
+  border-radius: inherit;
+}
+
+.picture-darkroom-heading > button,
+.picture-roll-drawer > header button,
+.picture-lightbox > button {
+  min-height: 44px;
+  padding: 0 6px 0 14px;
+  border: 1px solid rgba(238, 233, 219, 0.15);
+  border-radius: 999px;
+  background: rgba(16, 26, 19, 0.48);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 12px 34px rgba(0, 0, 0, 0.18);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  backdrop-filter: blur(22px) saturate(1.25);
+}
+
+.picture-main-frame {
+  border-radius: var(--radius-lg);
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.44), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.picture-main-frame::before {
+  border-radius: calc(var(--radius-lg) - 10px);
+}
+
+.picture-frame-meta dl {
+  padding: 16px;
+  border: 1px solid rgba(238, 233, 219, 0.13);
+  border-radius: 18px;
+  background: rgba(238, 233, 219, 0.035);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.picture-frame-controls button {
+  width: 40px;
+  height: 40px;
+  background: rgba(238, 233, 219, 0.035);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.picture-film-strip > button,
+.picture-film-pending {
+  border-radius: 12px;
+}
+
+.picture-roll-index > button,
+.picture-roll-pending {
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.055), transparent 50%),
+    rgba(238, 233, 219, 0.025);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 18px 46px rgba(0, 0, 0, 0.16);
+}
+
+.picture-roll-index img {
+  border-radius: 16px;
+}
+
+.picture-lightbox {
+  background: rgba(3, 6, 4, 0.86);
+  -webkit-backdrop-filter: blur(28px) saturate(0.9);
+  backdrop-filter: blur(28px) saturate(0.9);
+}
+
+.picture-lightbox > img {
+  border-radius: 18px;
+}
+
+.thought-grid {
+  gap: 9px;
+  padding: 2px;
+  border-top: 0;
+}
+
+.thought-grid button,
+.thought-grid button:nth-child(3n) {
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), transparent 54%),
+    rgba(232, 237, 226, 0.025);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035), 0 14px 34px rgba(0, 0, 0, 0.11);
+}
+
+.thought-grid button:hover,
+.thought-grid button:focus-visible {
+  border-color: rgba(224, 232, 218, 0.28);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.07), transparent 54%),
+    rgba(238, 233, 219, 0.045);
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--clay) 78%, white);
+  outline-offset: 3px;
+}
+
+@media (max-width: 680px) {
+  .topbar,
+  .panel-header {
+    margin: 7px 9px 0;
+    padding-inline: 14px;
+    border-radius: 17px;
+  }
+
+  .quote-tools > div {
+    grid-template-columns: 36px 36px 42px;
+    gap: 5px;
+    max-width: 124px;
+  }
+
+  .quote-tools button {
+    min-width: 36px;
+    height: 36px;
+    padding-inline: 5px;
+  }
+
+  .quote-cover-art {
+    border-radius: 17px;
+  }
+
+  .quote-cover-art::after {
+    border-radius: 12px;
+  }
+
+  .portal-nav {
+    gap: 6px;
+    padding: 6px 8px 8px;
+  }
+
+  .portal,
+  .portal:last-child,
+  .portal:nth-child(2),
+  .portal:nth-child(n + 3) {
+    min-height: 56px;
+    padding: 8px 12px;
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+  }
+
+  .panel-header button {
+    min-height: 44px;
+  }
+
+  .panel-header button span {
+    width: 34px;
+    height: 34px;
+  }
+
+  .story-entry,
+  .story-feature-entry,
+  .story-archive-gate,
+  .story-branch-entry {
+    border-radius: 20px;
+  }
+
+  .story-immersive-header p,
+  .favorite-immersive-header p {
+    min-height: 36px;
+    padding-inline: 11px;
+  }
+
+  .story-immersive-header button,
+  .favorite-immersive-header button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 5px 0 10px;
+  }
+
+  .favorite-categories {
+    gap: 6px;
+    padding: 7px 8px 9px;
+  }
+
+  .favorite-column,
+  .favorite-column:last-child {
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+  }
+
+  .favorite-column::after {
+    border-radius: 14px;
+  }
+
+  .annotation-placeholder {
+    padding: 12px 14px;
+    border-radius: 15px;
+  }
+
+  .music-back-to-artists {
+    top: 44px;
+    min-height: 36px;
+    padding-inline: 12px;
+  }
+
+  .music-artist-card {
+    padding: 7px 7px 11px;
+    border-radius: 22px;
+  }
+
+  .music-artist-card-frame,
+  .music-artist-frame {
+    border-radius: 16px;
+  }
+
+  .music-work-switch {
+    border-radius: 16px;
+  }
+
+  .music-work-switch button {
+    min-height: 44px;
+    border-radius: 12px;
+  }
+
+  .music-track-list {
+    padding: 4px;
+    border-radius: 17px;
+  }
+
+  .music-track-list button {
+    min-height: 44px;
+    border-radius: 12px;
+  }
+
+  .screen-kinds button {
+    min-height: 56px;
+    border-radius: 17px;
+  }
+
+  .screen-poster-rail button {
+    border-radius: 14px;
+  }
+
+  .book-index {
+    gap: 3px;
+    padding: 5px;
+    border-radius: 17px;
+  }
+
+  .book-index button,
+  .book-index button:last-child {
+    min-height: 44px;
+    padding: 8px;
+    border: 0;
+    border-radius: 12px;
+  }
+
+  .picture-main-frame {
+    border-radius: 20px;
+  }
+
+  .picture-main-frame::before {
+    border-radius: 12px;
+  }
+
+  .picture-frame-meta dl {
+    padding: 13px;
+    border-radius: 15px;
+  }
+
+  .picture-frame-controls button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .picture-roll-index > button,
+  .picture-roll-pending {
+    border-radius: 20px;
+  }
+
+  .thought-grid {
+    gap: 7px;
+  }
+
+  .thought-grid button,
+  .thought-grid button:nth-child(3n) {
+    min-height: 118px;
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .topbar,
+  .panel-header,
+  .quote-tools button,
+  .portal,
+  .story-immersive-header p,
+  .story-immersive-header button,
+  .favorite-immersive-header p,
+  .favorite-immersive-header button,
+  .favorite-column,
+  .music-back-to-artists,
+  .music-artist-card,
+  .music-work-switch,
+  .picture-darkroom-heading > button,
+  .picture-roll-drawer > header button,
+  .picture-lightbox > button {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: var(--glass-strong);
   }
 }
