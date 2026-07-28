@@ -370,20 +370,6 @@ button {
   overflow: hidden;
 }
 
-.tree-frame::before,
-.tree-frame::after {
-  content: "";
-  position: absolute;
-  width: 6px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--clay);
-  box-shadow: 0 0 0 6px rgba(189, 103, 75, 0.08);
-}
-
-.tree-frame::before { top: 8px; left: 8px; }
-.tree-frame::after { right: 8px; bottom: 8px; }
-
 .frame-branch {
   position: absolute;
   height: 1px;
@@ -580,7 +566,7 @@ button {
 
 .topbar {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr;
   align-items: center;
   padding: 0 clamp(22px, 4.4vw, 70px);
   border-bottom: 1px solid var(--line);
@@ -620,69 +606,20 @@ button {
 
 .monogram:hover img { transform: scale(1.34) rotate(7deg); }
 
-.topbar > p,
-.topbar-status {
-  margin: 0;
-  color: var(--ink-faint);
-  font-size: 7px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-}
-
-.topbar-status {
-  justify-self: end;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.topbar-status i {
-  width: 6px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--moss);
-  box-shadow: 0 0 0 4px rgba(102, 115, 91, 0.1);
-}
-
 .quote-hero {
   position: relative;
   display: grid;
-  grid-template-rows: 46px minmax(0, 1fr) 108px;
+  grid-template-rows: minmax(0, 1fr) 108px;
   min-height: 0;
   padding: 0 clamp(22px, 4.4vw, 70px);
   overflow: hidden;
   isolation: isolate;
 }
 
-.quote-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(224, 232, 218, 0.1);
-  color: var(--ink-faint);
-  font-size: 7px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-}
-
-.quote-heading p {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-}
-
-.quote-heading p i {
-  width: 7px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: var(--clay);
-}
-
 .quote-backdrop {
   position: absolute;
   z-index: -1;
-  inset: 46px 0 108px;
+  inset: 0 0 108px;
   overflow: hidden;
   opacity: var(--quote-image-opacity, 0.34);
   pointer-events: none;
@@ -719,7 +656,7 @@ button {
   gap: clamp(30px, 6vw, 100px);
   align-items: center;
   min-height: 0;
-  padding: 24px 3vw 18px 4vw;
+  padding: 32px 3vw 22px 4vw;
 }
 
 .quote-left {
@@ -875,31 +812,20 @@ button {
   z-index: 2;
   inset: 16px;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: 1fr auto;
   pointer-events: none;
   will-change: transform, opacity;
 }
 
-.quote-cover-medium,
-.quote-cover-index,
 .quote-cover-meta,
 .quote-cover-art strong {
   position: relative;
   z-index: 2;
 }
 
-.quote-cover-medium,
-.quote-cover-index,
 .quote-cover-meta {
   font: 600 6px/1.4 var(--sans);
   letter-spacing: 0.17em;
-}
-
-.quote-cover-index {
-  position: absolute;
-  top: 0;
-  right: 0;
-  opacity: 0.56;
 }
 
 .quote-cover-art strong {
@@ -912,16 +838,6 @@ button {
 }
 
 .quote-cover-meta { align-self: end; opacity: 0.72; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.75); }
-
-.quote-cover-caption {
-  display: block;
-  margin-top: 9px;
-  color: var(--ink-faint);
-  font: 600 6px/1 var(--sans);
-  letter-spacing: 0.17em;
-  text-align: right;
-  text-transform: uppercase;
-}
 
 /* Four portals */
 .portal-nav {
@@ -1570,7 +1486,7 @@ button {
 }
 
 .story-entry:first-child .story-entry-copy strong {
-  font-size: clamp(40px, 4.3vw, 72px);
+  font-size: clamp(32px, 3.4vw, 56px);
   letter-spacing: -0.04em;
 }
 
@@ -1729,7 +1645,7 @@ button {
 }
 
 .story-feature-copy strong {
-  font: 400 clamp(54px, 6.3vw, 104px) / 0.92 Georgia, "Songti SC", serif;
+  font: 400 clamp(38px, 4.2vw, 68px) / 0.96 Georgia, "Songti SC", serif;
   letter-spacing: -0.055em;
 }
 
@@ -4784,10 +4700,10 @@ button {
   .story-entry:first-child .story-entry-rule { top: 48px; right: 20px; left: 20px; }
   .story-entry-copy small { display: none; }
   .story-entry-copy strong { font-size: clamp(15px, 1.8vw, 20px); }
-  .story-entry:first-child .story-entry-copy strong { font-size: clamp(34px, 4.6vw, 52px); }
+  .story-entry:first-child .story-entry-copy strong { font-size: clamp(30px, 4vw, 44px); }
   .story-entry:first-child .story-entry-copy small { display: block; }
   .story-feature-entry { padding: 24px; }
-  .story-feature-copy strong { font-size: clamp(46px, 6.5vw, 72px); }
+  .story-feature-copy strong { font-size: clamp(36px, 4.8vw, 52px); }
   .story-archive-gate {
     grid-template-columns: minmax(130px, 0.7fr) minmax(150px, 1fr) auto;
     gap: 14px;
@@ -4844,21 +4760,15 @@ button {
   .topbar,
   .panel-header { padding-inline: 18px; }
 
-  .topbar > p,
-  .topbar-status span,
   .panel-header > p { display: none; }
 
-  .topbar { grid-template-columns: 1fr auto; }
-  .topbar-status { grid-column: 2; }
+  .topbar { grid-template-columns: 1fr; }
   .monogram-name { display: none; }
 
   .quote-hero {
-    grid-template-rows: 36px minmax(0, 1fr) 128px;
+    grid-template-rows: minmax(0, 1fr) 128px;
     padding-inline: 18px;
   }
-
-  .quote-heading { font-size: 6px; letter-spacing: 0.14em; }
-  .quote-heading > span { display: none; }
 
   .quote-main {
     grid-template-columns: minmax(0, 1fr) 92px;
@@ -4880,10 +4790,8 @@ button {
   .quote-cover-copy { inset: 8px; }
   .quote-cover-art::after { inset: 4px; }
   .quote-cover-art strong { padding-bottom: 3px; font-size: 10px; }
-  .quote-cover-medium, .quote-cover-index, .quote-cover-meta { font-size: 4px; letter-spacing: 0.08em; }
-  .quote-cover-index { top: 0; right: 0; }
-  .quote-cover-caption { display: none; }
-  .quote-backdrop { inset: 36px -18px 128px; }
+  .quote-cover-meta { font-size: 4px; letter-spacing: 0.08em; }
+  .quote-backdrop { inset: 0 -18px 128px; }
   .quote-backdrop::after { background: linear-gradient(90deg, var(--forest) 0%, rgba(17, 26, 20, 0.92) 36%, rgba(17, 26, 20, 0.28) 100%); }
 
   .portal-nav {
@@ -4986,7 +4894,7 @@ button {
   .story-entry-copy { grid-column: 1 / -1; grid-row: 2; }
   .story-entry-copy small { display: none; }
   .story-entry-copy strong { font-size: 17px; }
-  .story-entry:first-child .story-entry-copy strong { font-size: clamp(42px, 14vw, 62px); }
+  .story-entry:first-child .story-entry-copy strong { font-size: clamp(32px, 10vw, 46px); }
   .story-entry:first-child .story-entry-copy small {
     display: block;
     max-width: 25em;
@@ -5006,7 +4914,7 @@ button {
   .story-feature-action,
   .story-archive-gate > span,
   .story-archive-gate > small { font-size: 6px; }
-  .story-feature-copy strong { font-size: clamp(50px, 17vw, 72px); }
+  .story-feature-copy strong { font-size: clamp(36px, 12vw, 48px); }
   .story-feature-copy p {
     max-width: 27em;
     font-size: 9px;
@@ -5397,7 +5305,7 @@ button {
 @media (max-height: 650px) and (min-width: 681px) {
   .home-screen,
   .experience-panel { grid-template-rows: 64px minmax(0, 1fr); }
-  .quote-hero { grid-template-rows: 36px minmax(0, 1fr) 92px; }
+  .quote-hero { grid-template-rows: minmax(0, 1fr) 92px; }
   .quote-main { padding-block: 10px; }
   .quote-cover { width: 150px; }
   .quote-text { font-size: clamp(31px, 4vw, 48px); }

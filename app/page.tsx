@@ -229,9 +229,7 @@ export default function Home() {
     const quoteCitation = page.querySelector<HTMLElement>("[data-quote-citation]");
     const quoteCounter = page.querySelector<HTMLElement>("[data-quote-counter]");
     const coverTitle = page.querySelector<HTMLElement>("[data-cover-title]");
-    const coverMedium = page.querySelector<HTMLElement>("[data-cover-medium]");
     const coverMeta = page.querySelector<HTMLElement>("[data-cover-meta]");
-    const coverIndex = page.querySelector<HTMLElement>("[data-cover-index]");
     const coverImages = Array.from(page.querySelectorAll<HTMLImageElement>("[data-cover-image]"));
     const backdropImages = Array.from(page.querySelectorAll<HTMLImageElement>("[data-quote-backdrop-image]"));
     const quoteCycleMs = 6000;
@@ -299,9 +297,7 @@ export default function Home() {
       if (quoteCitation) quoteCitation.textContent = quote.citation;
       if (quoteCounter) quoteCounter.textContent = `${String(index + 1).padStart(2, "0")} / ${String(featuredQuotes.length).padStart(2, "0")}`;
       if (coverTitle) coverTitle.textContent = quote.coverTitle;
-      if (coverMedium) coverMedium.textContent = quote.medium;
       if (coverMeta) coverMeta.textContent = quote.coverMeta;
-      if (coverIndex) coverIndex.textContent = `M—L / ${String(index + 1).padStart(3, "0")}`;
       quoteHero?.style.setProperty("--quote-image-opacity", String(quote.imageOpacity));
       quoteHero?.setAttribute("data-quote-theme", quote.theme);
       quoteHero?.setAttribute("data-quote-length", quote.text.length > 30 ? "long" : "standard");
@@ -742,8 +738,6 @@ export default function Home() {
             <span className="monogram-mark"><img src="/avatar.jpg" alt="" /></span>
             <span className="monogram-name">Morten Liu</span>
           </a>
-          <p>PERSONAL ARCHIVE · VOL. 03</p>
-          <span className="topbar-status"><i /> ONLINE / 2026</span>
         </header>
 
         <section
@@ -757,8 +751,6 @@ export default function Home() {
             <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="0" src={featuredQuotes[0].backdropImage} alt="" />
             <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="1" src={featuredQuotes[0].backdropImage} alt="" />
           </div>
-          <div className="quote-heading clip-line"><p data-home-reveal><i /> WORDS I KEEP CLOSE</p><span data-home-reveal>SELECTED / 001—004</span></div>
-
           <div className="quote-main">
             <div className="quote-left">
               <div className="quote-stage" data-quote-stage>
@@ -777,7 +769,7 @@ export default function Home() {
                 <div data-home-reveal data-home-return>
                   <button type="button" aria-label="上一句话" onClick={() => changeQuoteRef.current(-1)}>←</button>
                   <button type="button" aria-label="下一句话" onClick={() => changeQuoteRef.current(1)}>→</button>
-                  <span data-quote-counter>01 / 03</span>
+                  <span data-quote-counter>01 / 04</span>
                 </div>
               </div>
             </div>
@@ -787,13 +779,10 @@ export default function Home() {
                 <img className="quote-cover-image" data-cover-image data-media-slot="0" src={featuredQuotes[0].image} alt={featuredQuotes[0].imageAlt} />
                 <img className="quote-cover-image" data-cover-image data-media-slot="1" src={featuredQuotes[0].image} alt="" />
                 <div className="quote-cover-copy">
-                  <span className="quote-cover-medium" data-cover-medium>{featuredQuotes[0].medium}</span>
-                  <span className="quote-cover-index" data-cover-index>M—L / 001</span>
                   <strong data-cover-title>{featuredQuotes[0].coverTitle}</strong>
                   <span className="quote-cover-meta" data-cover-meta>{featuredQuotes[0].coverMeta}</span>
                 </div>
               </div>
-              <figcaption className="quote-cover-caption" data-home-reveal>source object · cover archive</figcaption>
             </figure>
           </div>
 
