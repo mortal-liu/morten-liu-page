@@ -960,6 +960,10 @@ export default function Home() {
                   aria-pressed={activeFavorite === section.id}
                   onClick={() => enterFavoriteSection(section.id)}
                 >
+                  <span className="favorite-column-media" aria-hidden="true">
+                    <img src={section.image} alt="" loading="lazy" decoding="async" />
+                    <i /><b />
+                  </span>
                   <span className="favorite-column-index">{section.index} / 03</span>
                   <span className="favorite-column-tree" aria-hidden="true">
                     <i /><i /><i /><b /><b /><b /><b />

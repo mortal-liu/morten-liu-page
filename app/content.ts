@@ -110,6 +110,7 @@ export const favoriteSections: Array<{
   chineseTitle: string;
   categories: string;
   note: string;
+  image: string;
 }> = [
   {
     id: "music",
@@ -118,6 +119,7 @@ export const favoriteSections: Array<{
     chineseTitle: "音乐",
     categories: "SONGS / ALBUMS",
     note: "歌曲、专辑与反复播放的声音。",
+    image: "/favorites/music/artists/asen-portrait.webp",
   },
   {
     id: "screen",
@@ -126,6 +128,7 @@ export const favoriteSections: Array<{
     chineseTitle: "影视",
     categories: "FILMS / SERIES / ANIMATION",
     note: "电影、电视剧与动漫。",
+    image: "/favorites/screen/fight-club.jpg",
   },
   {
     id: "books",
@@ -134,6 +137,7 @@ export const favoriteSections: Array<{
     chineseTitle: "书籍",
     categories: "BOOKS / AUTHORS / PASSAGES",
     note: "书籍、作者与留下来的段落。",
+    image: "/favorites/books/to-live.jpg",
   },
 ];
 
