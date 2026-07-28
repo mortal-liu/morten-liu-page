@@ -1,270 +1,33 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import {
+  bookFavorites,
+  favoriteSections,
+  featuredQuotes,
+  musicArtists,
+  panelTitles,
+  pictureRolls,
+  portals,
+  screenFavorites,
+  storyArticles,
+  thinkingEntries,
+} from "./content";
+import type {
+  FavoriteId,
+  PanelId,
+  ReviewNote,
+  ScreenKind,
+  StoryArticleContent,
+} from "./content";
 
-type PanelId = "story" | "favorites" | "pictures" | "thinking";
-type FavoriteId = "music" | "screen" | "books";
 type StoryView = "cover" | "archive" | "article";
-
-const featuredQuotes = [
-  {
-    text: "圣诞树无论是位于地下室房间里，还是无人光顾的街角小店，总会闪闪发光。",
-    source: "《苦尽柑来遇见你》",
-    author: "",
-    citation: "南山塔夜景",
-    lang: "zh-CN",
-    medium: "SERIES / POSTER",
-    coverTitle: "苦尽柑来遇见你",
-    coverMeta: "苦尽柑来遇见你 · POSTER",
-    image: "/quotes/when-life-gives-you-tangerines-poster.jpg",
-    backdropImage: "/quotes/when-life-gives-you-tangerines.jpg",
-    imageAlt: "《苦尽柑来遇见你》竖版海报",
-    imageOpacity: 0.44,
-    theme: "night",
-  },
-  {
-    text: "如果你也来自小镇，成功从来不靠等待。",
-    source: "《你给的恨》",
-    author: "Asen艾志恒",
-    citation: "专辑《在雨后醒来》",
-    lang: "zh-CN",
-    medium: "MUSIC / ALBUM",
-    coverTitle: "在雨后醒来",
-    coverMeta: "ASEN · ALBUM",
-    image: "/quotes/after-rain.jpg",
-    backdropImage: "/quotes/after-rain.jpg",
-    imageAlt: "Asen《在雨后醒来》专辑封面",
-    imageOpacity: 0.34,
-    theme: "clay",
-  },
-  {
-    text: "从来如此，便对么？",
-    source: "《狂人日记》",
-    author: "鲁迅",
-    citation: "收录于《呐喊》",
-    lang: "zh-CN",
-    medium: "BOOK / LITERATURE",
-    coverTitle: "狂人日记",
-    coverMeta: "鲁迅 · 1918",
-    image: "/quotes/madmans-diary.jpg",
-    backdropImage: "/quotes/madmans-diary.jpg",
-    imageAlt: "鲁迅《狂人日记》书封",
-    imageOpacity: 0.2,
-    theme: "moss",
-  },
-  {
-    text: "Who looks outside, dreams; who looks inside, awakes.",
-    source: "Carl Gustav Jung",
-    author: "",
-    citation: "Letter (1916), published in C. G. Jung Letters, Vol. 1",
-    lang: "en",
-    medium: "BOOK / LETTERS",
-    coverTitle: "C. G. JUNG LETTERS",
-    coverMeta: "VOL. 1 · 1906—1950",
-    image: "/quotes/jung-letters-vol-1.jpg",
-    backdropImage: "/quotes/jung-letters-vol-1.jpg",
-    imageAlt: "C. G. Jung Letters, Volume 1 书封",
-    imageOpacity: 0.34,
-    theme: "ink",
-  },
-];
-
-const portals: Array<{ id: PanelId; index: string; title: string; subtitle: string }> = [
-  { id: "story", index: "01", title: "STORY", subtitle: "人生经历" },
-  { id: "favorites", index: "02", title: "FAVORITES", subtitle: "音乐 · 影视 · 书" },
-  { id: "pictures", index: "03", title: "PICTURES", subtitle: "影像与瞬间" },
-  { id: "thinking", index: "04", title: "THINKING", subtitle: "一些想法" },
-];
-
-const panelTitles: Record<PanelId, string> = {
-  story: "STORY",
-  favorites: "FAVORITES",
-  pictures: "PICTURES",
-  thinking: "THINKING",
-};
-
-const favoriteSections: Array<{
-  id: FavoriteId;
-  index: string;
-  title: string;
-  chineseTitle: string;
-  categories: string;
-  note: string;
-}> = [
-  {
-    id: "music",
-    index: "01",
-    title: "MUSIC",
-    chineseTitle: "音乐",
-    categories: "SONGS / ALBUMS",
-    note: "歌曲、专辑与反复播放的声音。",
-  },
-  {
-    id: "screen",
-    index: "02",
-    title: "SCREEN",
-    chineseTitle: "影视",
-    categories: "FILMS / SERIES / ANIMATION",
-    note: "电影、电视剧与动漫。",
-  },
-  {
-    id: "books",
-    index: "03",
-    title: "BOOKS",
-    chineseTitle: "书籍",
-    categories: "BOOKS / AUTHORS / PASSAGES",
-    note: "书籍、作者与留下来的段落。",
-  },
-];
-
-const musicFavorites = [
-  {
-    title: "焦虑",
-    artist: "艾志恒Asen · Maikon Flocka Flame",
-    image: "/favorites/music/anxiety.jpg",
-  },
-  {
-    title: "小镇的孩子",
-    artist: "艾志恒Asen",
-    image: "/favorites/music/small-town-child.jpg",
-  },
-  {
-    title: "你给的恨",
-    artist: "艾志恒Asen · Maikon Flocka Flame",
-    image: "/favorites/music/the-hate-you-gave.jpg",
-  },
-];
-
-const musicAlbums = [
-  {
-    title: "在雨后醒来",
-    artist: "艾志恒Asen",
-    image: "/quotes/after-rain.jpg",
-    meta: "ALBUM / PERSONAL SELECTION",
-  },
-  {
-    title: "Life After Small Town",
-    artist: "艾志恒Asen",
-    image: "/favorites/music/small-town-child.jpg",
-    meta: "ALBUM / PERSONAL SELECTION",
-  },
-];
-
-const musicArtists = [
-  {
-    index: "01",
-    name: "ASEN",
-    chineseName: "艾志恒",
-    image: "/favorites/music/artists/asen-portrait.png",
-    tracks: musicFavorites,
-    albums: musicAlbums,
-  },
-  {
-    index: "02",
-    name: "J. COLE",
-    chineseName: "J. Cole",
-    image: "/favorites/music/artists/j-cole.jpg",
-    tracks: [],
-    albums: [],
-  },
-  {
-    index: "03",
-    name: "KANYE WEST",
-    chineseName: "Kanye West",
-    image: "/favorites/music/artists/kanye-west.jpg",
-    tracks: [],
-    albums: [],
-  },
-  {
-    index: "04",
-    name: "KENDRICK LAMAR",
-    chineseName: "Kendrick Lamar",
-    image: "/favorites/music/artists/kendrick-lamar.jpg",
-    tracks: [],
-    albums: [],
-  },
-];
-
-const pictureRolls = [
-  {
-    index: "01",
-    title: "起始帧",
-    label: "THE FIRST ROLL",
-    frames: [
-      {
-        index: "001",
-        image: "/avatar.jpg",
-        alt: "Morten-Liu 的圣诞树头像",
-        title: "从一棵树开始",
-        date: "UNDATED",
-        place: "PERSONAL ARCHIVE",
-        caption: "这是暗房里的第一张影像。更多时刻会在以后慢慢显影。",
-      },
-    ],
-  },
-];
-
-type ScreenKind = "电影" | "电视剧" | "动漫";
-
-const screenFavorites: Array<{ title: string; kind: ScreenKind; image: string }> = [
-  { title: "搏击俱乐部", kind: "电影", image: "/favorites/screen/fight-club.jpg" },
-  { title: "帕特森", kind: "电影", image: "/favorites/screen/paterson.jpg" },
-  { title: "苦尽柑来遇见你", kind: "电视剧", image: "/favorites/screen/tangerines.jpg" },
-  { title: "绝命毒师", kind: "电视剧", image: "/favorites/screen/breaking-bad.jpg" },
-  { title: "风骚律师", kind: "电视剧", image: "/favorites/screen/better-call-saul.jpg" },
-  { title: "进击的巨人", kind: "动漫", image: "/favorites/screen/attack-on-titan.jpg" },
-  { title: "我的青春恋爱物语果然有问题", kind: "动漫", image: "/favorites/screen/oregairu.jpg" },
-];
-
-const bookFavorites = [
-  { title: "活着", author: "余华", type: "小说", image: "/favorites/books/to-live.jpg" },
-  { title: "被讨厌的勇气", author: "岸见一郎 · 古贺史健", type: "心理 / 哲学", image: "/favorites/books/courage-to-be-disliked.jpg" },
-  { title: "小岛经济学", author: "彼得·希夫 · 安德鲁·希夫", type: "经济学", image: "/favorites/books/island-economics.jpg" },
-];
-
-const storyPrologue = {
-  index: "00",
-  title: "序章",
-  label: "PROLOGUE",
-  paragraphs: [
-    "记得初中有一次周末补课，我和一个好朋友似乎在拿语文老师说过的一句话开玩笑，我们俩当时本来都已经笑得不行了，结果那个老师上课的时候又重复了一遍又一遍，那时候我们笑得肚子都痛，怎么也停不下来。",
-    "现在我只记得这些。那句话究竟是什么，我们为什么觉得好笑，当时还有哪些细节，我已经一点也想不起来了。这件事最后只剩下一个结论：那天我们笑得很开心。",
-    "我觉得人的性格可能也是这样。小时候发生过许多不起眼的事情，它们一点点塑造了我们。等到很多年以后，我们已经习惯用“我就是这样的人”来概括自己，却很难再说清这个结论是怎么形成的。",
-    "比如我一直觉得自己很善于思考，有时甚至觉得这是天生的。但现在回头看，也可能没有这么简单。",
-    "小学上数学课时，我很喜欢寻找一些和别人不同的解题方法。想出方法这件事本身就让我高兴，再加上数学老师很会鼓励人，被看见和被肯定，也让我愿意继续把时间花在这上面。这种习惯后来一直保留了下来。",
-    "它究竟有多少来自天生，有多少来自一次次正反馈，我不知道。思考本身带来的快乐和被人认可的虚荣心，大概从一开始就混在一起。具体的事情已经模糊，“我是一个善于思考的人”这个结论却留了下来。",
-    "克尔凯郭尔有一句话常被转述为：“人生只能向后理解，却必须向前生活。”人当然只能向前活，但我不想因此放弃向后理解。",
-    "有些人确实只能向前活，生活没有给他们留下回头看的余力。还有些人已经有了余力，却不知道应该从哪里开始。我以前也经常冒出许多问题，只是不知道该问谁，不知道去哪里寻找答案，甚至连应该看什么书都不知道。",
-    "后来有了 AI。对于像我这样喜欢思考、又没什么资源的年轻人，它确实提供了一个很方便的入口。AI 先给出一个笼统的答案，我觉得太浅，就继续追问，再让它推荐相关的书。慢慢地，我开始沿着这些问题读书。",
-    "AI 可以很快给出答案，书却让我真正经历了思考的过程。后来，无论是读哲学、健身，还是和一个比较熟悉历史的室友聊天，我都开始发现，许多原本分散的问题其实可以联系起来。我没有因此想明白所有事情，只是比以前更知道应该怎样寻找答案。",
-    "在思想方面，我是一个实用主义者。思想必须对现实生活有用：要么让我活得更自洽一些，要么帮助我管理情绪，要么让我更好地理解世界和他人。我愿意借助哲学、精神分析或者其他知识回看自己，但不想用其中任何一种解释限制自己。知道一种性格可能从哪里来，不代表以后只能继续这样生活。",
-    "有人会把这种回看称为“无病呻吟”。我觉得这个名字没有那么重要。一个问题既然会反复带来内耗和痛苦，它就已经进入了现实生活。反思也不代表一个人比其他人更高级。每个人都有自己的环境和限制，也有一些暂时无法面对的问题。我只是不想在有余力的时候，依然不去追问自己为什么会变成现在这样。",
-    "这也是我决定开设这个 Story 板块的原因。",
-    "我以前很少在网上分享自己的想法，最多和身边的人聊一聊。主动谈论这些事情，总让我觉得自己有点装。即使嘴上说着“只是写给自己”，只要知道有人会读，写作就一定会受到观众影响。",
-    "个人网站让我稍微自在一些。会点进这里的人，大概已经对我这个人有了一点兴趣。我不需要考虑能不能得到很多转发，也不用急着让所有人理解。",
-    "我写这篇序章，最初确实带着一点自证的意思。好像必须先向读者和自己解释清楚，我不是来装逼的，才有资格继续写下去。但现在想想，没有这个必要。",
-    "我当然希望有人看见我的思考，这会满足我的虚荣心。如果读者又能从中得到一点东西，那就是一个双赢的局面。大大方方承认这一点没什么不好。真正需要注意的是，我不能站在一个自以为更清醒的位置上审视别人，也不能把没有反思习惯的人写成一群傻子。这里记录的是我的经历和理解，不是我给所有人准备的答案。",
-    "这个板块一半写给愿意了解我的人，一半写给我自己。",
-    "我不准备严格按照时间顺序，从出生、童年、初中一路写到现在。第一次让我明确意识到这种写法，是读余华的《在细雨中呼喊》。对我来说，重要的是它让我意识到，记忆本来就不会按照年份整齐地回来。",
-    "所以以后想起哪件事，我就写哪件事。记得多少写多少，无法确定的地方就保留它的不确定。那些已经忘掉的部分，也同样属于我的故事。",
-    "我写这些，不是为了给现在的自己找出一个完整、唯一的解释。我只是不想让所有过程都慢慢消失，最后只剩下几个关于“我是谁”的结论。",
-    "生活还要继续向前。这个板块让我在向前走的时候，也能偶尔回头看看。",
-  ],
-};
-
-const storyIndexEntries = [
-  {
-    index: "00",
-    title: storyPrologue.title,
-    label: storyPrologue.label,
-    note: "关于记忆、性格，以及为什么要回头理解自己。",
-    deck: "我只是不想让所有过程都慢慢消失，最后只剩下几个关于“我是谁”的结论。",
-  },
-];
 
 export default function Home() {
   const [storyView, setStoryView] = useState<StoryView>("cover");
+  const [activeStoryIndex, setActiveStoryIndex] = useState(0);
+  const [storyArticleReturn, setStoryArticleReturn] = useState<"cover" | "archive">("cover");
   const [activeFavorite, setActiveFavorite] = useState<FavoriteId | null>(null);
   const [favoriteView, setFavoriteView] = useState<FavoriteId | null>(null);
   const [favoriteIsLeaving, setFavoriteIsLeaving] = useState(false);
@@ -273,20 +36,25 @@ export default function Home() {
   const [screenKind, setScreenKind] = useState<ScreenKind>("电影");
   const [screenSelection, setScreenSelection] = useState(0);
   const [bookSelection, setBookSelection] = useState(0);
+  const [thinkingSelection, setThinkingSelection] = useState<number | null>(null);
   const pageRef = useRef<HTMLElement>(null);
   const preloadedFavoriteImagesRef = useRef<HTMLImageElement[]>([]);
   const favoriteEnterTimerRef = useRef<number | null>(null);
   const favoriteLeaveTimerRef = useRef<number | null>(null);
   const favoriteViewRef = useRef<FavoriteId | null>(null);
   const musicArtistSelectionRef = useRef<number | null>(null);
+  const thinkingSelectionRef = useRef<number | null>(null);
   const storyViewRef = useRef<StoryView>("cover");
-  const storyArticleReturnRef = useRef<"cover" | "archive">("cover");
   const leaveStoryRef = useRef<() => void>(() => undefined);
   const leaveFavoriteSectionRef = useRef<() => void>(() => undefined);
+  const leaveThinkingRef = useRef<() => void>(() => undefined);
   const skipIntroRef = useRef<() => void>(() => undefined);
   const changeQuoteRef = useRef<(direction: number) => void>(() => undefined);
   const openPanelRef = useRef<(panel: PanelId) => void>(() => undefined);
   const closePanelRef = useRef<() => void>(() => undefined);
+  const featuredStory = storyArticles[0];
+  const activeStory = storyArticles[activeStoryIndex] ?? featuredStory;
+  const writtenStoryCount = String(storyArticles.length).padStart(2, "0");
 
   useLayoutEffect(() => {
     favoriteViewRef.current = favoriteView;
@@ -297,11 +65,16 @@ export default function Home() {
   }, [musicArtistSelection]);
 
   useLayoutEffect(() => {
+    thinkingSelectionRef.current = thinkingSelection;
+  }, [thinkingSelection]);
+
+  useLayoutEffect(() => {
     storyViewRef.current = storyView;
   }, [storyView]);
 
-  const openStory = (returnTo: "cover" | "archive") => {
-    storyArticleReturnRef.current = returnTo;
+  const openStory = (articleIndex: number, returnTo: "cover" | "archive") => {
+    setActiveStoryIndex(articleIndex);
+    setStoryArticleReturn(returnTo);
     setStoryView("article");
     window.setTimeout(() => {
       pageRef.current?.querySelector<HTMLElement>("[data-story-detail-root]")?.focus({ preventScroll: true });
@@ -317,7 +90,7 @@ export default function Home() {
 
   const leaveStory = () => {
     const currentView = storyViewRef.current;
-    const nextView = currentView === "article" ? storyArticleReturnRef.current : "cover";
+    const nextView = currentView === "article" ? storyArticleReturn : "cover";
     setStoryView(nextView);
     window.setTimeout(() => {
       const focusTarget = nextView === "archive"
@@ -345,24 +118,31 @@ export default function Home() {
       })
     );
 
-    const priorityFavoriteSources = [
-      ...screenFavorites.slice(0, 2).map((item) => item.image),
-      ...musicArtists.map((artist) => artist.image),
-    ];
-    preloadedFavoriteImagesRef.current = preloadImages(priorityFavoriteSources, "high");
+    const warmVisibleArchives = () => {
+      const priorityFavoriteSources = [
+        featuredQuotes[1]?.image,
+        featuredQuotes[1]?.backdropImage,
+        ...screenFavorites.slice(0, 2).map((item) => item.image),
+        ...musicArtists.slice(0, 2).map((artist) => artist.image),
+        ...bookFavorites.slice(0, 1).map((item) => item.image),
+      ].filter((source): source is string => Boolean(source));
+      preloadedFavoriteImagesRef.current = preloadImages(
+        Array.from(new Set(priorityFavoriteSources)),
+        "low",
+      );
+    };
 
-    const preloadTimer = window.setTimeout(() => {
-      const deferredSources = [
-        ...screenFavorites.slice(2),
-        ...musicFavorites,
-        ...musicAlbums,
-        ...bookFavorites,
-      ].map((item) => item.image);
-      preloadedFavoriteImagesRef.current.push(...preloadImages(deferredSources, "low"));
-    }, 900);
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let idleCallback = 0;
+    if (typeof window.requestIdleCallback === "function") {
+      idleCallback = window.requestIdleCallback(warmVisibleArchives, { timeout: 2400 });
+    } else {
+      timer = setTimeout(warmVisibleArchives, 1600);
+    }
 
     return () => {
-      window.clearTimeout(preloadTimer);
+      if (idleCallback) window.cancelIdleCallback(idleCallback);
+      if (timer) clearTimeout(timer);
       preloadedFavoriteImagesRef.current = [];
     };
   }, []);
@@ -411,6 +191,27 @@ export default function Home() {
 
   useLayoutEffect(() => {
     leaveFavoriteSectionRef.current = leaveFavoriteSection;
+  });
+
+  const openThinking = (index: number) => {
+    setThinkingSelection(index);
+    window.setTimeout(() => {
+      pageRef.current?.querySelector<HTMLElement>("[data-thinking-detail-root]")?.focus({ preventScroll: true });
+    }, 40);
+  };
+
+  const leaveThinking = () => {
+    const previousIndex = thinkingSelectionRef.current;
+    setThinkingSelection(null);
+    window.setTimeout(() => {
+      if (previousIndex !== null) {
+        pageRef.current?.querySelector<HTMLButtonElement>(`[data-thinking-entry="${previousIndex}"]`)?.focus({ preventScroll: true });
+      }
+    }, 40);
+  };
+
+  useLayoutEffect(() => {
+    leaveThinkingRef.current = leaveThinking;
   });
 
   useLayoutEffect(() => {
@@ -693,6 +494,7 @@ export default function Home() {
         setFavoriteIsLeaving(false);
       }
       if (closingId === "story") setStoryView("cover");
+      if (closingId === "thinking") setThinkingSelection(null);
 
       if (reducedMotion) {
         gsap.set(target, { autoAlpha: 0, pointerEvents: "none" });
@@ -827,6 +629,8 @@ export default function Home() {
           leaveStoryRef.current();
         } else if (activePanel === "favorites" && favoriteViewRef.current) {
           leaveFavoriteSectionRef.current();
+        } else if (activePanel === "thinking" && thinkingSelectionRef.current !== null) {
+          leaveThinkingRef.current();
         } else if (activePanel) closePanelRef.current();
       }
       if (!introVisible && !activePanel) {
@@ -951,7 +755,7 @@ export default function Home() {
         >
           <div className="quote-backdrop" aria-hidden="true">
             <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="0" src={featuredQuotes[0].backdropImage} alt="" />
-            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="1" src={featuredQuotes[1].backdropImage} alt="" />
+            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="1" src={featuredQuotes[0].backdropImage} alt="" />
           </div>
           <div className="quote-heading clip-line"><p data-home-reveal><i /> WORDS I KEEP CLOSE</p><span data-home-reveal>SELECTED / 001—004</span></div>
 
@@ -981,7 +785,7 @@ export default function Home() {
             <figure className="quote-cover clip-line">
               <div className="quote-cover-art" data-home-reveal data-home-return>
                 <img className="quote-cover-image" data-cover-image data-media-slot="0" src={featuredQuotes[0].image} alt={featuredQuotes[0].imageAlt} />
-                <img className="quote-cover-image" data-cover-image data-media-slot="1" src={featuredQuotes[1].image} alt={featuredQuotes[1].imageAlt} />
+                <img className="quote-cover-image" data-cover-image data-media-slot="1" src={featuredQuotes[0].image} alt="" />
                 <div className="quote-cover-copy">
                   <span className="quote-cover-medium" data-cover-medium>{featuredQuotes[0].medium}</span>
                   <span className="quote-cover-index" data-cover-index>M—L / 001</span>
@@ -1025,14 +829,14 @@ export default function Home() {
           <div className="story-content" data-story-view={storyView}>
             <div className="story-index-view" data-visible={storyView === "cover"} aria-hidden={storyView !== "cover"}>
               <div className="story-index-intro" data-panel-reveal>
-                <p className="panel-kicker">PERSONAL HISTORY / 001—∞</p>
+                <p className="panel-kicker">PERSONAL HISTORY / {writtenStoryCount}—∞</p>
                 <h2>Story</h2>
                 <p className="story-index-thesis">向前生活，向后理解。</p>
                 <p className="story-index-description">
                   记忆不按年份回来。这里收留那些仍然清晰、已经模糊，以及尚未来得及写下的部分。
                 </p>
                 <div className="story-index-status" aria-label="Story 写作进度">
-                  <span><strong>01</strong> WRITTEN</span>
+                  <span><strong>{writtenStoryCount}</strong> WRITTEN</span>
                   <i aria-hidden="true" />
                   <span><strong>∞</strong> GROWING</span>
                 </div>
@@ -1045,13 +849,13 @@ export default function Home() {
                   className="story-feature-entry"
                   data-story-entry
                   type="button"
-                  onClick={() => openStory("cover")}
+                  onClick={() => openStory(0, "cover")}
                 >
-                  <span className="story-feature-index">FEATURED MEMORY / {storyIndexEntries[0].index}</span>
+                  <span className="story-feature-index">FEATURED MEMORY / {featuredStory.index}</span>
                   <span className="story-feature-copy">
-                    <small>{storyIndexEntries[0].label}</small>
-                    <strong>{storyIndexEntries[0].title}</strong>
-                    <p>{storyIndexEntries[0].deck}</p>
+                    <small>{featuredStory.label}</small>
+                    <strong>{featuredStory.title}</strong>
+                    <p>{featuredStory.deck}</p>
                   </span>
                   <span className="story-feature-action">阅读全文 <i aria-hidden="true">↗</i></span>
                 </button>
@@ -1063,7 +867,7 @@ export default function Home() {
                 >
                   <span>ALL STORIES / 年轮档案</span>
                   <strong>进入年轮</strong>
-                  <small>01 篇已写下 · 档案会随文字继续生长</small>
+                  <small>{storyArticles.length} 篇已写下 · 档案会随文字继续生长</small>
                   <i aria-hidden="true">↓</i>
                 </button>
               </div>
@@ -1080,7 +884,7 @@ export default function Home() {
                   </header>
                   <div className="story-archive-scroll">
                     <div className="story-archive-intro">
-                      <p>THE GROWING ARCHIVE / 001—∞</p>
+                      <p>THE GROWING ARCHIVE / {writtenStoryCount}—∞</p>
                       <h2>年轮</h2>
                       <div>
                         <strong>写下的顺序，<br />不是人生的顺序。</strong>
@@ -1089,13 +893,13 @@ export default function Home() {
                     </div>
                     <div className="story-tree-index" aria-label="Story 全部篇目">
                       <i className="story-tree-trunk" aria-hidden="true" />
-                      {storyIndexEntries.map((entry, index) => (
+                      {storyArticles.map((entry, index) => (
                         <button
                           className="story-branch-entry"
                           data-side={index % 2 === 0 ? "left" : "right"}
                           key={entry.index}
                           type="button"
-                          onClick={() => openStory("archive")}
+                          onClick={() => openStory(index, "archive")}
                         >
                           <span>{entry.index}</span>
                           <div>
@@ -1120,8 +924,8 @@ export default function Home() {
             <div className="story-detail-view" data-visible={storyView === "article"} aria-hidden={storyView !== "article"}>
               {storyView === "article" && (
                 <StoryArticle
-                  article={storyPrologue}
-                  backLabel={storyArticleReturnRef.current === "archive" ? "年轮" : "STORY"}
+                  article={activeStory}
+                  backLabel={storyArticleReturn === "archive" ? "年轮" : "STORY"}
                   onBack={leaveStory}
                 />
               )}
@@ -1219,20 +1023,18 @@ export default function Home() {
         <PicturesArchive />
       </section>
 
-      <section className="experience-panel panel-thinking" data-panel="thinking" aria-hidden="true">
+      <section
+        className="experience-panel panel-thinking"
+        data-panel="thinking"
+        data-detail={thinkingSelection !== null}
+        aria-hidden="true"
+      >
         <PanelHeader index="04" title="THINKING" onClose={() => closePanelRef.current()} />
-        <div className="panel-body thinking-body">
-          <aside data-panel-reveal><span>04 / 04</span><p>NOTES THAT MAY<br />CHANGE LATER</p></aside>
-          <div className="thinking-content">
-            <p className="panel-kicker" data-panel-reveal>NOTES IN PROGRESS / 2026</p>
-            <h2 data-panel-reveal>Thinking</h2>
-            <div className="thought-grid">
-              <article data-panel-reveal><span>001</span><h3>关于观察</h3><p>先记录发生过什么，再决定如何理解它。</p></article>
-              <article data-panel-reveal><span>002</span><h3>下一篇</h3><p>尚未写下。</p></article>
-              <article data-panel-reveal><span>003</span><h3>下一篇</h3><p>尚未写下。</p></article>
-            </div>
-          </div>
-        </div>
+        <ThinkingArchive
+          activeIndex={thinkingSelection}
+          onBack={leaveThinking}
+          onSelect={openThinking}
+        />
       </section>
     </main>
   );
@@ -1288,7 +1090,7 @@ function MusicArchive({
                 aria-label={`打开歌手 ${artist.chineseName} ${artist.name} 的音乐档案`}
               >
                 <span className="music-artist-card-frame">
-                  <img src={artist.image} alt="" aria-hidden="true" fetchPriority="high" />
+                  <img src={artist.image} alt="" aria-hidden="true" loading="lazy" decoding="async" />
                   <i aria-hidden="true" />
                   <b aria-hidden="true">{artist.index}</b>
                 </span>
@@ -1319,11 +1121,12 @@ function MusicArchive({
                   data-active={index === (workMode === "tracks" ? activeIndex : activeAlbumIndex)}
                   src={item.image}
                   alt=""
+                  loading="lazy"
                   decoding="async"
                 />
               ))
             ) : (
-              <img data-active="true" src={activeArtist.image} alt="" decoding="async" />
+              <img data-active="true" src={activeArtist.image} alt="" loading="lazy" decoding="async" />
             )}
           </div>
 
@@ -1334,7 +1137,7 @@ function MusicArchive({
 
             <aside className="music-artist-panel" aria-label={`歌手 ${activeArtist.chineseName} ${activeArtist.name}`}>
               <div className="music-artist-frame">
-                <img src={activeArtist.image} alt={`${activeArtist.chineseName} ${activeArtist.name} 黑白肖像`} fetchPriority="high" />
+                <img src={activeArtist.image} alt={`${activeArtist.chineseName} ${activeArtist.name} 黑白肖像`} decoding="async" />
                 <span aria-hidden="true">{activeArtist.index}</span>
               </div>
               <p><span>ARTIST {activeArtist.index}</span><small>PORTRAIT ARCHIVE</small></p>
@@ -1357,6 +1160,7 @@ function MusicArchive({
                         src={item.image}
                         alt={index === activeIndex ? `${item.title}封面` : ""}
                         aria-hidden={index !== activeIndex}
+                        loading={index === activeIndex ? "eager" : "lazy"}
                         decoding="async"
                       />
                     ))}
@@ -1367,7 +1171,7 @@ function MusicArchive({
                   </div>
                 </div>
 
-                <AnnotationPlaceholder prompt="在这里写下它为什么会被你反复播放，或某一句留下来的歌词。" />
+                <AnnotationNote note={activeTrack.note} />
               </div>
             ) : workMode === "albums" && activeAlbum ? (
               <div className="music-artist-profile music-album-profile" key={`album-${activeAlbum.title}`}>
@@ -1386,6 +1190,7 @@ function MusicArchive({
                         src={album.image}
                         alt={index === activeAlbumIndex ? `《${album.title}》专辑封面` : ""}
                         aria-hidden={index !== activeAlbumIndex}
+                        loading={index === activeAlbumIndex ? "eager" : "lazy"}
                         decoding="async"
                       />
                     ))}
@@ -1396,7 +1201,7 @@ function MusicArchive({
                   </div>
                 </div>
 
-                <AnnotationPlaceholder prompt="在这里写下这张专辑的整体气质、它最打动你的部分，以及你最推荐的三首歌。" />
+                <AnnotationNote note={activeAlbum.note} />
               </div>
             ) : (
               <div className="music-empty-profile">
@@ -1478,17 +1283,24 @@ function MusicArchive({
 }
 
 function PicturesArchive() {
+  const [activeRollIndex, setActiveRollIndex] = useState(0);
   const [activeFrame, setActiveFrame] = useState(0);
   const [rollsOpen, setRollsOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const filmStripRef = useRef<HTMLDivElement>(null);
-  const activeRoll = pictureRolls[0];
-  const frame = activeRoll.frames[activeFrame];
+  const activeRoll = pictureRolls[activeRollIndex] ?? pictureRolls[0];
+  const frame = activeRoll.frames[activeFrame] ?? activeRoll.frames[0];
 
-  const moveFrame = (direction: number) => {
+  const moveFrame = useCallback((direction: number) => {
     setActiveFrame((current) => (
       (current + direction + activeRoll.frames.length) % activeRoll.frames.length
     ));
+  }, [activeRoll.frames.length]);
+
+  const selectRoll = (index: number) => {
+    setActiveRollIndex(index);
+    setActiveFrame(0);
+    setRollsOpen(false);
   };
 
   useEffect(() => {
@@ -1507,7 +1319,7 @@ function PicturesArchive() {
 
     document.addEventListener("keydown", onKeydown, true);
     return () => document.removeEventListener("keydown", onKeydown, true);
-  }, [lightboxOpen, rollsOpen]);
+  }, [lightboxOpen, moveFrame, rollsOpen]);
 
   return (
     <div
@@ -1546,7 +1358,8 @@ function PicturesArchive() {
                 src={item.image}
                 alt={index === activeFrame ? item.alt : ""}
                 aria-hidden={index !== activeFrame}
-                fetchPriority="high"
+                loading={index === activeFrame ? "eager" : "lazy"}
+                decoding="async"
               />
             ))}
             <span className="picture-frame-mark picture-frame-mark--top">MORTEN—LIU / {frame.index}</span>
@@ -1600,7 +1413,7 @@ function PicturesArchive() {
             </button>
           ))}
           <div className="picture-film-pending" aria-label="等待下一张照片">
-            <span>002</span><i aria-hidden="true" /><small>NEXT FRAME</small>
+            <span>{String(activeRoll.frames.length + 1).padStart(3, "0")}</span><i aria-hidden="true" /><small>NEXT FRAME</small>
           </div>
         </div>
       </footer>
@@ -1612,14 +1425,21 @@ function PicturesArchive() {
             <button type="button" aria-label="关闭全部胶卷" onClick={() => setRollsOpen(false)}>关闭 <i aria-hidden="true">×</i></button>
           </header>
           <div className="picture-roll-index">
-            <button type="button" onClick={() => setRollsOpen(false)}>
-              <img src={activeRoll.frames[0].image} alt="" aria-hidden="true" />
-              <span>ROLL {activeRoll.index}</span>
-              <strong>{activeRoll.title}</strong>
-              <small>{String(activeRoll.frames.length).padStart(2, "0")} FRAME · {activeRoll.label}</small>
-            </button>
+            {pictureRolls.map((roll, index) => (
+              <button
+                type="button"
+                data-active={index === activeRollIndex}
+                key={roll.index}
+                onClick={() => selectRoll(index)}
+              >
+                <img src={roll.frames[0].image} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                <span>ROLL {roll.index}</span>
+                <strong>{roll.title}</strong>
+                <small>{String(roll.frames.length).padStart(2, "0")} FRAME · {roll.label}</small>
+              </button>
+            ))}
             <div className="picture-roll-pending">
-              <span>ROLL 02</span>
+              <span>ROLL {String(pictureRolls.length + 1).padStart(2, "0")}</span>
               <strong>等待下一卷</strong>
               <small>NOT EXPOSED YET</small>
             </div>
@@ -1646,7 +1466,7 @@ function ScreenArchive({
   onSelect,
 }: {
   activeIndex: number;
-  items: Array<{ title: string; kind: ScreenKind; image: string }>;
+  items: Array<{ title: string; kind: ScreenKind; image: string; note: ReviewNote }>;
   kind: ScreenKind;
   onKindChange: (kind: ScreenKind) => void;
   onSelect: (index: number) => void;
@@ -1688,13 +1508,13 @@ function ScreenArchive({
         <div className="screen-title-block" key={`title-${kind}`}>
           <span>{String(globalIndex + 1).padStart(2, "0")} / {String(screenFavorites.length).padStart(2, "0")} · {activeItem.kind}</span>
           <h3>{activeItem.title}</h3>
-          <AnnotationPlaceholder prompt="这里留给你的短评、喜欢的角色，或看完之后仍然没有散去的感受。" />
+          <AnnotationNote note={activeItem.note} />
         </div>
 
         <div className="screen-poster-rail" key={`rail-${kind}`} aria-label={`${kind}海报列表`}>
           {items.map((item, index) => (
             <button type="button" data-selected={index === activeIndex} key={item.title} onClick={() => onSelect(index)}>
-              <img src={item.image} alt={`${item.title}海报`} />
+              <img src={item.image} alt={`${item.title}海报`} loading="lazy" decoding="async" />
               <span><small>{String(index + 1).padStart(2, "0")}</small><strong>{item.title}</strong></span>
             </button>
           ))}
@@ -1717,7 +1537,7 @@ function BookArchive({
     <section className="favorite-archive book-archive" data-favorite-detail-root tabIndex={-1} aria-label="书籍收藏">
       <div className="book-desk">
         <nav className="book-index" aria-label="书籍目录">
-          <p>READING INDEX / 003</p>
+          <p>READING INDEX / {String(bookFavorites.length).padStart(3, "0")}</p>
           {bookFavorites.map((item, index) => (
             <button type="button" data-selected={index === activeIndex} key={item.title} onClick={() => onSelect(index)}>
               <span>{String(index + 1).padStart(2, "0")}</span>
@@ -1737,6 +1557,7 @@ function BookArchive({
                 src={item.image}
                 alt={index === activeIndex ? `${item.title}封面` : ""}
                 aria-hidden={index !== activeIndex}
+                loading={index === activeIndex ? "eager" : "lazy"}
                 decoding="async"
               />
             ))}
@@ -1748,19 +1569,97 @@ function BookArchive({
           <p>{activeItem.type} / SELECTED BOOK</p>
           <h3>{activeItem.title}</h3>
           <span>{activeItem.author}</span>
-          <AnnotationPlaceholder prompt="在这里整理你的批注：喜欢的段落、读完后的判断，以及未来重读时想重新确认的问题。" />
+          <AnnotationNote note={activeItem.note} />
         </article>
       </div>
     </section>
   );
 }
 
-function AnnotationPlaceholder({ prompt }: { prompt: string }) {
+function AnnotationNote({ note }: { note: ReviewNote }) {
+  const hasNote = note.paragraphs.length > 0;
+
   return (
-    <div className="annotation-placeholder">
-      <span>MY NOTE / 待填写</span>
-      <p>{prompt}</p>
+    <div className="annotation-placeholder" data-filled={hasNote}>
+      <span>{hasNote ? "MY NOTE / MORTEN—LIU" : "MY NOTE / 待填写"}</span>
+      {hasNote
+        ? note.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)
+        : <p>{note.prompt}</p>}
       <i aria-hidden="true" />
+    </div>
+  );
+}
+
+function ThinkingArchive({
+  activeIndex,
+  onBack,
+  onSelect,
+}: {
+  activeIndex: number | null;
+  onBack: () => void;
+  onSelect: (index: number) => void;
+}) {
+  const activeEntry = activeIndex === null ? null : thinkingEntries[activeIndex];
+
+  if (activeEntry) {
+    return (
+      <article className="story-article thinking-article" data-thinking-detail-root tabIndex={-1}>
+        <header className="story-immersive-header">
+          <p><span>04 / 04</span> · THINKING / {activeEntry.index}</p>
+          <button type="button" aria-label="返回 Thinking" onClick={onBack}>
+            返回 <strong>THINKING</strong><span aria-hidden="true">←</span>
+          </button>
+        </header>
+
+        <div className="story-article-layout">
+          <aside className="story-article-masthead">
+            <span>{activeEntry.label} / {activeEntry.index}</span>
+            <h1><small>{activeEntry.index}</small>{activeEntry.title}</h1>
+            <p>MORTEN—LIU<br />THOUGHT ARCHIVE</p>
+            <i aria-hidden="true" />
+          </aside>
+
+          <div className="story-article-copy">
+            <p className="story-article-deck">{activeEntry.summary}</p>
+            {activeEntry.paragraphs.map((paragraph, index) => (
+              <p key={`${activeEntry.index}-${index}`}>{paragraph}</p>
+            ))}
+            <footer><span>{activeEntry.index} / END</span><i aria-hidden="true" /></footer>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <div className="panel-body thinking-body">
+      <aside data-panel-reveal><span>04 / 04</span><p>NOTES THAT MAY<br />CHANGE LATER</p></aside>
+      <div className="thinking-content">
+        <p className="panel-kicker" data-panel-reveal>NOTES IN PROGRESS / 2026</p>
+        <h2 data-panel-reveal>Thinking</h2>
+        <div className="thought-grid">
+          {thinkingEntries.map((entry, index) => {
+            const isWritten = entry.paragraphs.length > 0;
+
+            return (
+              <button
+                data-panel-reveal
+                data-thinking-entry={index}
+                data-written={isWritten}
+                disabled={!isWritten}
+                key={entry.index}
+                type="button"
+                onClick={() => onSelect(index)}
+                aria-label={isWritten ? `阅读 ${entry.index} ${entry.title}` : `${entry.index} ${entry.title}，尚未写下`}
+              >
+                <span>{entry.index}</span>
+                <h3>{entry.title}</h3>
+                <p>{entry.summary}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1770,11 +1669,12 @@ function StoryArticle({
   backLabel,
   onBack,
 }: {
-  article: typeof storyPrologue;
+  article: StoryArticleContent;
   backLabel: string;
   onBack: () => void;
 }) {
-  const sectionBreaks = new Set([8, 12, 18]);
+  const sectionBreaks = new Set(article.sectionBreaks ?? []);
+  const emphasis = new Set(article.emphasis ?? []);
 
   return (
     <article className="story-article" data-story-detail-root tabIndex={-1}>
@@ -1794,11 +1694,11 @@ function StoryArticle({
         </aside>
 
         <div className="story-article-copy">
-          <p className="story-article-deck">我只是不想让所有过程都慢慢消失，最后只剩下几个关于“我是谁”的结论。</p>
+          <p className="story-article-deck">{article.deck}</p>
           {article.paragraphs.map((paragraph, index) => (
             <p
               className={sectionBreaks.has(index) ? "story-section-break" : undefined}
-              data-emphasis={index === 6 || undefined}
+              data-emphasis={emphasis.has(index) || undefined}
               key={`${article.index}-${index}`}
             >
               {paragraph}
