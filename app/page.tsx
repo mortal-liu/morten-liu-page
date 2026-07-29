@@ -45,6 +45,8 @@ export default function Home() {
   const musicArtistSelectionRef = useRef<number | null>(null);
   const thinkingSelectionRef = useRef<number | null>(null);
   const storyViewRef = useRef<StoryView>("cover");
+  const keyboardNavigationRef = useRef(false);
+  const hasCompletedPortalTransitionRef = useRef(false);
   const leaveStoryRef = useRef<() => void>(() => undefined);
   const leaveFavoriteSectionRef = useRef<() => void>(() => undefined);
   const leaveThinkingRef = useRef<() => void>(() => undefined);
@@ -52,9 +54,31 @@ export default function Home() {
   const changeQuoteRef = useRef<(direction: number) => void>(() => undefined);
   const openPanelRef = useRef<(panel: PanelId) => void>(() => undefined);
   const closePanelRef = useRef<() => void>(() => undefined);
+  const focusForCurrentInput = useCallback((target: HTMLElement | null | undefined) => {
+    if (!target || !keyboardNavigationRef.current) return;
+    target.focus({ preventScroll: true });
+  }, []);
   const featuredStory = storyArticles[0];
   const activeStory = storyArticles[activeStoryIndex] ?? featuredStory;
   const writtenStoryCount = String(storyArticles.length).padStart(2, "0");
+
+  useEffect(() => {
+    const markKeyboardNavigation = (event: KeyboardEvent) => {
+      if (!["Alt", "Control", "Meta", "Shift"].includes(event.key)) {
+        keyboardNavigationRef.current = true;
+      }
+    };
+    const markPointerNavigation = () => {
+      keyboardNavigationRef.current = false;
+    };
+
+    window.addEventListener("keydown", markKeyboardNavigation, true);
+    window.addEventListener("pointerdown", markPointerNavigation, true);
+    return () => {
+      window.removeEventListener("keydown", markKeyboardNavigation, true);
+      window.removeEventListener("pointerdown", markPointerNavigation, true);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     favoriteViewRef.current = favoriteView;
@@ -77,14 +101,14 @@ export default function Home() {
     setStoryArticleReturn(returnTo);
     setStoryView("article");
     window.setTimeout(() => {
-      pageRef.current?.querySelector<HTMLElement>("[data-story-detail-root]")?.focus({ preventScroll: true });
+      focusForCurrentInput(pageRef.current?.querySelector<HTMLElement>("[data-story-detail-root]"));
     }, 40);
   };
 
   const openStoryArchive = () => {
     setStoryView("archive");
     window.setTimeout(() => {
-      pageRef.current?.querySelector<HTMLElement>("[data-story-archive-root]")?.focus({ preventScroll: true });
+      focusForCurrentInput(pageRef.current?.querySelector<HTMLElement>("[data-story-archive-root]"));
     }, 40);
   };
 
@@ -98,7 +122,7 @@ export default function Home() {
         : currentView === "archive"
           ? "[data-story-archive-gate]"
           : "[data-story-entry]";
-      pageRef.current?.querySelector<HTMLElement>(focusTarget)?.focus({ preventScroll: true });
+      focusForCurrentInput(pageRef.current?.querySelector<HTMLElement>(focusTarget));
     }, 40);
   };
 
@@ -158,7 +182,7 @@ export default function Home() {
       setFavoriteView(id);
       favoriteEnterTimerRef.current = null;
       window.setTimeout(() => {
-        pageRef.current?.querySelector<HTMLElement>("[data-favorite-detail-root]")?.focus({ preventScroll: true });
+        focusForCurrentInput(pageRef.current?.querySelector<HTMLElement>("[data-favorite-detail-root]"));
       }, 40);
     }, 520);
   };
@@ -171,7 +195,7 @@ export default function Home() {
       musicArtistSelectionRef.current = null;
       setMusicArtistSelection(null);
       window.setTimeout(() => {
-        pageRef.current?.querySelector<HTMLButtonElement>("[data-music-artist-card]")?.focus({ preventScroll: true });
+        focusForCurrentInput(pageRef.current?.querySelector<HTMLButtonElement>("[data-music-artist-card]"));
       }, 40);
       return;
     }
@@ -184,7 +208,7 @@ export default function Home() {
       setFavoriteIsLeaving(false);
       favoriteLeaveTimerRef.current = null;
       window.setTimeout(() => {
-        pageRef.current?.querySelector<HTMLButtonElement>(`[data-favorite-column="${previousView}"]`)?.focus({ preventScroll: true });
+        focusForCurrentInput(pageRef.current?.querySelector<HTMLButtonElement>(`[data-favorite-column="${previousView}"]`));
       }, 40);
     }, exitDuration);
   };
@@ -196,7 +220,7 @@ export default function Home() {
   const openThinking = (index: number) => {
     setThinkingSelection(index);
     window.setTimeout(() => {
-      pageRef.current?.querySelector<HTMLElement>("[data-thinking-detail-root]")?.focus({ preventScroll: true });
+      focusForCurrentInput(pageRef.current?.querySelector<HTMLElement>("[data-thinking-detail-root]"));
     }, 40);
   };
 
@@ -205,7 +229,7 @@ export default function Home() {
     setThinkingSelection(null);
     window.setTimeout(() => {
       if (previousIndex !== null) {
-        pageRef.current?.querySelector<HTMLButtonElement>(`[data-thinking-entry="${previousIndex}"]`)?.focus({ preventScroll: true });
+        focusForCurrentInput(pageRef.current?.querySelector<HTMLButtonElement>(`[data-thinking-entry="${previousIndex}"]`));
       }
     }, 40);
   };
@@ -428,7 +452,7 @@ export default function Home() {
 
       if (reducedMotion) {
         revealPanelImmediately(id);
-        target.querySelector<HTMLButtonElement>("[data-panel-close]")?.focus();
+        focusForCurrentInput(target.querySelector<HTMLButtonElement>("[data-panel-close]"));
         return;
       }
 
@@ -440,13 +464,15 @@ export default function Home() {
       transition.style.setProperty("--transition-color", color);
       transition.style.setProperty("--origin-x", `${originX}px`);
       transition.style.setProperty("--origin-y", `${originY}px`);
+      const transitionRate = hasCompletedPortalTransitionRef.current ? 1.38 : 1.12;
 
       panelTimeline = gsap
         .timeline({
           defaults: { ease: "power4.inOut" },
           onComplete: () => {
             panelIsTransitioning = false;
-            target.querySelector<HTMLButtonElement>("[data-panel-close]")?.focus();
+            hasCompletedPortalTransitionRef.current = true;
+            focusForCurrentInput(target.querySelector<HTMLButtonElement>("[data-panel-close]"));
           },
         })
         .set(transition, { autoAlpha: 1, pointerEvents: "auto" })
@@ -470,8 +496,9 @@ export default function Home() {
         .to(".transition-leaf", { y: -26, rotate: 28, autoAlpha: 0, duration: 0.52, stagger: 0.018 }, 0.94)
         .to(".transition-branch", { scaleX: 0, transformOrigin: "left center", duration: 0.54, stagger: 0.018 }, 0.98)
         .to(".page-transition-canopy", { clipPath: "circle(0% at 50% 0%)", duration: 0.86 }, 1.02)
-        .fromTo(target.querySelectorAll("[data-panel-reveal]"), { y: 42, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.06, ease: "power3.out" }, 1.08)
+        .fromTo(target.querySelectorAll("[data-panel-reveal]"), { y: 34, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.64, stagger: 0.055, ease: "power3.out" }, 0.96)
         .set(transition, { autoAlpha: 0, pointerEvents: "none" });
+      panelTimeline.timeScale(transitionRate);
     };
 
     closePanelRef.current = () => {
@@ -498,7 +525,7 @@ export default function Home() {
         target.setAttribute("inert", "");
         gsap.set(homeScreen, { autoAlpha: 1, pointerEvents: "auto" });
         activePanel = null;
-        page.querySelector<HTMLButtonElement>(`[data-portal="${closingId}"]`)?.focus();
+        focusForCurrentInput(page.querySelector<HTMLButtonElement>(`[data-portal="${closingId}"]`));
         return;
       }
 
@@ -518,7 +545,7 @@ export default function Home() {
           defaults: { ease: "power4.inOut" },
           onComplete: () => {
             panelIsTransitioning = false;
-            page.querySelector<HTMLButtonElement>(`[data-portal="${closingId}"]`)?.focus();
+            focusForCurrentInput(page.querySelector<HTMLButtonElement>(`[data-portal="${closingId}"]`));
           },
         })
         .set(transition, { autoAlpha: 1, pointerEvents: "auto" })
@@ -542,8 +569,9 @@ export default function Home() {
         .to(".transition-leaf", { y: 30, rotate: -28, autoAlpha: 0, duration: 0.48, stagger: 0.016 }, 0.9)
         .to(".transition-branch", { scaleX: 0, transformOrigin: "left center", duration: 0.5, stagger: 0.016 }, 0.94)
         .to(".page-transition-canopy", { clipPath: "circle(0% at 50% 100%)", duration: 0.82 }, 0.98)
-        .fromTo("[data-home-return]", { y: 22, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.045, ease: "power3.out" }, 1.02)
+        .fromTo("[data-home-return]", { y: 18, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.52, stagger: 0.04, ease: "power3.out" }, 0.92)
         .set(transition, { autoAlpha: 0, pointerEvents: "none" });
+      panelTimeline.timeScale(1.42);
     };
 
     const releaseIntro = () => {
@@ -675,7 +703,7 @@ export default function Home() {
       cleanups.forEach((cleanup) => cleanup());
       document.body.classList.remove("intro-lock", "experience-lock");
     };
-  }, []);
+  }, [focusForCurrentInput]);
 
   const filteredScreenFavorites = screenFavorites.filter((item) => item.kind === screenKind);
 
