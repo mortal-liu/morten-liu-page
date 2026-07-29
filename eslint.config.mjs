@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     ".openai/**",
     "coverage/**",
     "dist/**",
+    "dist-static/**",
     "out/**",
     "build/**",
     "work/**",
