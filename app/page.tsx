@@ -1303,13 +1303,46 @@ function MusicArchive({
 }
 
 function PicturesArchive({ onClose }: { onClose: () => void }) {
-  const frames = pictureRolls.flatMap((roll) => roll.frames);
+  const [activeRollIndex, setActiveRollIndex] = useState(0);
   const [activeFrame, setActiveFrame] = useState(0);
   const touchStartX = useRef<number | null>(null);
+  const thumbnailRailRef = useRef<HTMLElement>(null);
+  const wheelDistanceRef = useRef(0);
+  const wheelLockedRef = useRef(false);
+  const wheelUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const railDragRef = useRef<{ pointerId: number; startX: number; scrollLeft: number } | null>(null);
+  const railDraggedRef = useRef(false);
+  const activeRoll = pictureRolls[activeRollIndex] ?? pictureRolls[0];
+  const frames = activeRoll.frames;
 
   const moveFrame = useCallback((direction: number) => {
     setActiveFrame((current) => (current + direction + frames.length) % frames.length);
   }, [frames.length]);
+
+  useEffect(() => {
+    pictureRolls.flatMap((roll) => roll.frames).forEach((frame) => {
+      const preload = new Image();
+      preload.src = frame.image;
+    });
+
+    return () => {
+      if (wheelUnlockTimerRef.current) clearTimeout(wheelUnlockTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const activeThumbnail = thumbnailRailRef.current?.querySelector<HTMLButtonElement>(
+      '[data-active="true"]',
+    );
+    activeThumbnail?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeFrame, activeRollIndex]);
+
+  const selectRoll = (index: number) => {
+    if (index === activeRollIndex) return;
+    setActiveRollIndex(index);
+    setActiveFrame(0);
+    thumbnailRailRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  };
 
   return (
     <div
@@ -1330,7 +1363,37 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
         if (Math.abs(distance) < 44) return;
         moveFrame(distance > 0 ? -1 : 1);
       }}
+      onWheel={(event) => {
+        const distance = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+        if (Math.abs(distance) < 1) return;
+        event.preventDefault();
+        thumbnailRailRef.current?.scrollBy({ left: distance * 2.4, behavior: "auto" });
+        wheelDistanceRef.current += distance;
+
+        if (Math.abs(wheelDistanceRef.current) < 150 || wheelLockedRef.current) return;
+        moveFrame(wheelDistanceRef.current > 0 ? 1 : -1);
+        wheelDistanceRef.current = 0;
+        wheelLockedRef.current = true;
+        wheelUnlockTimerRef.current = setTimeout(() => {
+          wheelLockedRef.current = false;
+        }, 620);
+      }}
     >
+      <div className="picture-gallery-valance" aria-hidden="true" />
+
+      <nav className="picture-gallery-categories" aria-label="Picture categories">
+        {pictureRolls.map((roll, index) => (
+          <button
+            type="button"
+            key={roll.title}
+            data-active={index === activeRollIndex}
+            onClick={() => selectRoll(index)}
+          >
+            {roll.title}
+          </button>
+        ))}
+      </nav>
+
       <div className="picture-gallery-images" aria-live="polite">
         {frames.map((item, index) => (
           <img
@@ -1344,6 +1407,58 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
           />
         ))}
       </div>
+
+      <nav
+        ref={thumbnailRailRef}
+        className="picture-gallery-thumbnails"
+        aria-label="Picture previews"
+        onPointerDown={(event) => {
+          if (event.pointerType !== "mouse") return;
+          railDraggedRef.current = false;
+          railDragRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            scrollLeft: event.currentTarget.scrollLeft,
+          };
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          const drag = railDragRef.current;
+          if (!drag || drag.pointerId !== event.pointerId) return;
+          const distance = event.clientX - drag.startX;
+          if (Math.abs(distance) > 4) railDraggedRef.current = true;
+          event.currentTarget.scrollLeft = drag.scrollLeft - distance * 1.75;
+        }}
+        onPointerUp={(event) => {
+          if (railDragRef.current?.pointerId === event.pointerId) {
+            railDragRef.current = null;
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          }
+        }}
+        onPointerCancel={() => {
+          railDragRef.current = null;
+        }}
+        onTouchStart={(event) => event.stopPropagation()}
+        onTouchEnd={(event) => event.stopPropagation()}
+      >
+        {frames.map((item, index) => (
+          <button
+            type="button"
+            key={item.image}
+            data-active={index === activeFrame}
+            aria-label={`Picture ${index + 1}`}
+            onClick={() => {
+              if (railDraggedRef.current) {
+                railDraggedRef.current = false;
+                return;
+              }
+              setActiveFrame(index);
+            }}
+          >
+            <img src={item.image} alt="" loading="lazy" decoding="async" draggable="false" />
+          </button>
+        ))}
+      </nav>
 
       <button className="picture-gallery-close" type="button" aria-label="关闭照片" onClick={onClose}>
         <span aria-hidden="true">×</span>

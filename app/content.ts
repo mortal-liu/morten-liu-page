@@ -248,7 +248,7 @@ export const pictureRolls = [
       },
       {
         index: "004",
-        image: "/pictures/better-call-saul/04-last-cigarette.webp",
+        image: "/pictures/better-call-saul/04-last-cigarette.jpg",
         alt: "黑白画面中 Jimmy 与 Kim 靠墙抽烟",
         title: "最后一支烟",
         date: "2022",
