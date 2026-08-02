@@ -6757,7 +6757,7 @@ button:not(:disabled):active {
   width: max-content;
   min-height: 72px;
   will-change: transform;
-  animation: pictureThumbnailFilmRight 52s linear infinite;
+  animation: pictureThumbnailFilmLeft 52s linear infinite;
 }
 
 .picture-gallery-thumbnails[data-paused="true"] .picture-gallery-thumbnail-track {
@@ -6771,9 +6771,9 @@ button:not(:disabled):active {
   gap: var(--thumbnail-gap);
 }
 
-@keyframes pictureThumbnailFilmRight {
-  from { transform: translate3d(calc(-33.333333% - var(--thumbnail-gap-third)), 0, 0); }
-  to { transform: translate3d(0, 0, 0); }
+@keyframes pictureThumbnailFilmLeft {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(calc(-33.333333% - var(--thumbnail-gap-third)), 0, 0); }
 }
 
 .picture-gallery-thumbnails button {
