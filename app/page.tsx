@@ -1359,7 +1359,7 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
       previousTime = time;
 
       if (!thumbnailPausedRef.current) {
-        rail.scrollLeft -= elapsed * 0.028;
+        rail.scrollLeft -= elapsed * 0.045;
         const loopWidth = rail.scrollWidth / thumbnailCopies;
         if (loopWidth > 0) {
           const lowerBound = loopWidth;
@@ -1433,11 +1433,6 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
 
       {viewMode === "library" && (
         <section className="picture-library" aria-label="选择图片作品">
-          <button className="picture-library-back" type="button" onClick={() => setViewMode("gallery")}>
-            <span aria-hidden="true">←</span>
-            返回 {activeRoll.title}
-          </button>
-
           <header className="picture-library-heading">
             <span>PICTURE ARCHIVE</span>
             <h2>选择一部作品</h2>
@@ -1454,7 +1449,7 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
                 data-active={index === activeRollIndex}
                 onClick={() => selectRoll(index)}
               >
-                <img src={roll.frames[0].image} alt="" loading="eager" decoding="async" />
+                <img src={roll.cover} alt={`${roll.title} 海报`} loading="eager" decoding="async" />
                 <span className="picture-library-card-shade" aria-hidden="true" />
                 <span className="picture-library-card-copy">
                   <small>{roll.index} · {String(roll.frames.length).padStart(2, "0")} FRAMES</small>
@@ -1518,7 +1513,18 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
         ))}
       </nav>
 
-      <button className="picture-gallery-close" type="button" aria-label="关闭照片" onClick={onClose}>
+      <button
+        className="picture-gallery-close"
+        type="button"
+        aria-label={viewMode === "library" ? "返回图片画廊" : "关闭照片"}
+        onClick={() => {
+          if (viewMode === "library") {
+            setViewMode("gallery");
+            return;
+          }
+          onClose();
+        }}
+      >
         <span aria-hidden="true">×</span>
       </button>
       <button className="picture-gallery-step picture-gallery-step--previous" type="button" aria-label="上一张照片" onClick={() => moveFrame(-1)}>

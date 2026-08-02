@@ -217,7 +217,8 @@ export const pictureRolls = [
   {
     index: "01",
     title: "Better Call Saul",
-    label: "SELECTED FRAMES / 2015—2022",
+    label: "SELECTED FRAMES / 2015–2022",
+    cover: "/favorites/screen/better-call-saul.jpg",
     frames: [
       {
         index: "001",
@@ -296,7 +297,8 @@ export const pictureRolls = [
   {
     index: "02",
     title: "Breaking Bad",
-    label: "SELECTED FRAMES / 2008—2013",
+    label: "SELECTED FRAMES / 2008–2013",
+    cover: "/favorites/screen/breaking-bad.jpg",
     frames: [
       {
         index: "001",
