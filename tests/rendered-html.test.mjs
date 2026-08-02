@@ -66,6 +66,10 @@ test("keeps expanding content in the central content registry", async () => {
     assert.match(content, new RegExp(`export const ${registry}`));
   }
 
+  assert.match(content, /title: "Better Call Saul"/);
+  assert.match(content, /title: "Breaking Bad"/);
+  assert.doesNotMatch(content, /从一棵树开始|image: "\/avatar\.jpg"/);
+
   assert.match(layout, /title:\s*"Morten-Liu/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 });
