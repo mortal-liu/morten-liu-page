@@ -51,8 +51,9 @@ test("keeps expanding content in the central content registry", async () => {
   assert.match(page, /storyArticles\.map/);
   assert.match(page, /pictureRolls\.flatMap/);
   assert.match(page, /className="picture-gallery"/);
-  assert.match(page, /className="picture-gallery-roll-menu"/);
-  assert.match(page, /window\.setInterval/);
+  assert.match(page, /className="picture-library"/);
+  assert.match(page, /className="picture-library-card"/);
+  assert.match(page, /window\.setTimeout\(\(\) => moveFrame\(1\), 5200\)/);
   assert.match(page, /className="picture-gallery-thumbnails"/);
   assert.doesNotMatch(page, /picture-frame-meta|picture-film-footer|picture-roll-drawer/);
   assert.match(page, /thinkingEntries\.map/);

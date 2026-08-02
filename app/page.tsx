@@ -1305,7 +1305,7 @@ function MusicArchive({
 function PicturesArchive({ onClose }: { onClose: () => void }) {
   const [activeRollIndex, setActiveRollIndex] = useState(0);
   const [activeFrame, setActiveFrame] = useState(0);
-  const [rollMenuOpen, setRollMenuOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"gallery" | "library">("gallery");
   const touchStartX = useRef<number | null>(null);
   const thumbnailRailRef = useRef<HTMLElement>(null);
   const wheelDistanceRef = useRef(0);
@@ -1337,12 +1337,13 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
   }, []);
 
   useEffect(() => {
-    if (rollMenuOpen) return;
-    const timer = window.setInterval(() => moveFrame(1), 6800);
-    return () => window.clearInterval(timer);
-  }, [moveFrame, rollMenuOpen]);
+    if (viewMode !== "gallery") return;
+    const timer = window.setTimeout(() => moveFrame(1), 5200);
+    return () => window.clearTimeout(timer);
+  }, [activeFrame, moveFrame, viewMode]);
 
   useEffect(() => {
+    if (viewMode !== "gallery") return;
     const rail = thumbnailRailRef.current;
     if (!rail) return;
 
@@ -1358,7 +1359,7 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
       previousTime = time;
 
       if (!thumbnailPausedRef.current) {
-        rail.scrollLeft -= elapsed * 0.022;
+        rail.scrollLeft -= elapsed * 0.028;
         const loopWidth = rail.scrollWidth / thumbnailCopies;
         if (loopWidth > 0) {
           const lowerBound = loopWidth;
@@ -1376,34 +1377,35 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
       cancelAnimationFrame(setupFrame);
       if (thumbnailAnimationRef.current) cancelAnimationFrame(thumbnailAnimationRef.current);
     };
-  }, [activeRollIndex, thumbnailCopies]);
+  }, [activeRollIndex, thumbnailCopies, viewMode]);
 
   const selectRoll = (index: number) => {
-    if (index !== activeRollIndex) {
-      setActiveRollIndex(index);
-      setActiveFrame(0);
-    }
-    setRollMenuOpen(false);
+    setActiveRollIndex(index);
+    setActiveFrame(0);
+    setViewMode("gallery");
   };
 
   return (
     <div
       className="picture-gallery"
       data-panel-reveal
+      data-view={viewMode}
       tabIndex={-1}
       onKeyDown={(event) => {
-        if (event.key === "Escape" && rollMenuOpen) {
+        if (event.key === "Escape" && viewMode === "library") {
           event.stopPropagation();
-          setRollMenuOpen(false);
+          setViewMode("gallery");
           return;
         }
         if (event.key === "ArrowLeft") moveFrame(-1);
         if (event.key === "ArrowRight") moveFrame(1);
       }}
       onTouchStart={(event) => {
+        if (viewMode !== "gallery") return;
         touchStartX.current = event.changedTouches[0]?.clientX ?? null;
       }}
       onTouchEnd={(event) => {
+        if (viewMode !== "gallery") return;
         if (touchStartX.current === null) return;
         const distance = (event.changedTouches[0]?.clientX ?? touchStartX.current) - touchStartX.current;
         touchStartX.current = null;
@@ -1411,6 +1413,7 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
         moveFrame(distance > 0 ? -1 : 1);
       }}
       onWheel={(event) => {
+        if (viewMode !== "gallery") return;
         const distance = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
         if (Math.abs(distance) < 1) return;
         event.preventDefault();
@@ -1428,36 +1431,52 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
     >
       <div className="picture-gallery-valance" aria-hidden="true" />
 
-      <div className="picture-gallery-roll-menu" data-open={rollMenuOpen}>
-        <button
-          className="picture-gallery-roll-trigger"
-          type="button"
-          aria-expanded={rollMenuOpen}
-          aria-controls="picture-roll-options"
-          onClick={() => setRollMenuOpen((open) => !open)}
-        >
-          <span>{activeRoll.title}</span>
-          <i aria-hidden="true" />
-        </button>
+      {viewMode === "library" && (
+        <section className="picture-library" aria-label="选择图片作品">
+          <button className="picture-library-back" type="button" onClick={() => setViewMode("gallery")}>
+            <span aria-hidden="true">←</span>
+            返回 {activeRoll.title}
+          </button>
 
-        <nav
-          id="picture-roll-options"
-          className="picture-gallery-roll-options"
-          aria-label="Picture categories"
-          onWheel={(event) => event.stopPropagation()}
-        >
-          {pictureRolls.map((roll, index) => (
-            <button
-              type="button"
-              key={roll.title}
-              data-active={index === activeRollIndex}
-              onClick={() => selectRoll(index)}
-            >
-              {roll.title}
-            </button>
-          ))}
-        </nav>
-      </div>
+          <header className="picture-library-heading">
+            <span>PICTURE ARCHIVE</span>
+            <h2>选择一部作品</h2>
+            <p>从一部影视作品进入它留下的画面。</p>
+          </header>
+
+          <div className="picture-library-grid" role="list">
+            {pictureRolls.map((roll, index) => (
+              <button
+                className="picture-library-card"
+                type="button"
+                role="listitem"
+                key={roll.title}
+                data-active={index === activeRollIndex}
+                onClick={() => selectRoll(index)}
+              >
+                <img src={roll.frames[0].image} alt="" loading="eager" decoding="async" />
+                <span className="picture-library-card-shade" aria-hidden="true" />
+                <span className="picture-library-card-copy">
+                  <small>{roll.index} · {String(roll.frames.length).padStart(2, "0")} FRAMES</small>
+                  <strong>{roll.title}</strong>
+                  <span>{index === activeRollIndex ? "继续观看" : "进入画廊"}<i aria-hidden="true">→</i></span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <button
+        className="picture-gallery-roll-trigger"
+        type="button"
+        aria-label="选择另一部影视作品"
+        onClick={() => setViewMode("library")}
+      >
+        <small>作品库</small>
+        <span>{activeRoll.title}</span>
+        <i aria-hidden="true" />
+      </button>
 
       <div className="picture-gallery-images" aria-live="polite">
         {frames.map((item, index) => (
@@ -1477,10 +1496,6 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
         ref={thumbnailRailRef}
         className="picture-gallery-thumbnails"
         aria-label="Picture previews"
-        onPointerEnter={() => { thumbnailPausedRef.current = true; }}
-        onPointerLeave={() => { thumbnailPausedRef.current = false; }}
-        onFocus={() => { thumbnailPausedRef.current = true; }}
-        onBlur={() => { thumbnailPausedRef.current = false; }}
         onTouchStart={(event) => {
           event.stopPropagation();
           thumbnailPausedRef.current = true;
