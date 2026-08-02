@@ -6721,16 +6721,16 @@ button:not(:disabled):active {
 }
 
 .picture-gallery-thumbnails {
+  --thumbnail-gap: 11px;
+  --thumbnail-gap-third: 3.6667px;
   position: absolute;
   z-index: 8;
   right: 0;
   bottom: 0;
   left: 0;
-  display: flex;
-  align-items: center;
-  gap: 11px;
+  display: block;
   height: 116px;
-  padding: 17px max(52px, 10vw) max(17px, env(safe-area-inset-bottom));
+  padding: 17px 0 max(17px, env(safe-area-inset-bottom));
   overflow-x: auto;
   overflow-y: hidden;
   border-top: 1px solid rgba(210, 225, 204, 0.1);
@@ -6744,12 +6744,37 @@ button:not(:disabled):active {
   scroll-behavior: auto;
   touch-action: pan-x;
   cursor: default;
-  will-change: scroll-position;
   -webkit-overflow-scrolling: touch;
 }
 
 .picture-gallery-thumbnails::-webkit-scrollbar { display: none; }
 .picture-gallery-thumbnails:active { cursor: default; }
+
+.picture-gallery-thumbnail-track {
+  display: flex;
+  align-items: center;
+  gap: var(--thumbnail-gap);
+  width: max-content;
+  min-height: 72px;
+  will-change: transform;
+  animation: pictureThumbnailFilmRight 52s linear infinite;
+}
+
+.picture-gallery-thumbnails[data-paused="true"] .picture-gallery-thumbnail-track {
+  animation-play-state: paused;
+}
+
+.picture-gallery-thumbnail-sequence {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--thumbnail-gap);
+}
+
+@keyframes pictureThumbnailFilmRight {
+  from { transform: translate3d(calc(-33.333333% - var(--thumbnail-gap-third)), 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
 
 .picture-gallery-thumbnails button {
   position: relative;
@@ -6910,9 +6935,15 @@ button:not(:disabled):active {
   .picture-gallery-step span { display: grid; width: 36px; height: 36px; font-size: 26px; opacity: 0.56; }
 
   .picture-gallery-thumbnails {
-    gap: 8px;
+    --thumbnail-gap: 8px;
+    --thumbnail-gap-third: 2.6667px;
     height: 96px;
-    padding: 14px 18px max(14px, env(safe-area-inset-bottom));
+    padding: 14px 0 max(14px, env(safe-area-inset-bottom));
+  }
+
+  .picture-gallery-thumbnail-track {
+    min-height: 58px;
+    animation-duration: 42s;
   }
 
   .picture-gallery-thumbnails button {

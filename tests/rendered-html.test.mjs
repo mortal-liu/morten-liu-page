@@ -56,6 +56,8 @@ test("keeps expanding content in the central content registry", async () => {
   assert.match(page, /window\.setTimeout\(\(\) => moveFrame\(1\), 5200\)/);
   assert.match(page, /viewMode === "library" \? "返回图片画廊" : "关闭照片"/);
   assert.match(page, /className="picture-gallery-thumbnails"/);
+  assert.match(page, /className="picture-gallery-thumbnail-track"/);
+  assert.doesNotMatch(page, /rail\.scrollLeft -=/);
   assert.doesNotMatch(page, /picture-frame-meta|picture-film-footer|picture-roll-drawer/);
   assert.match(page, /thinkingEntries\.map/);
   assert.match(page, /loading="lazy"/);

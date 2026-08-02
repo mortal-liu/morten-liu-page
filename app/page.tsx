@@ -1311,11 +1311,10 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
   const wheelDistanceRef = useRef(0);
   const wheelLockedRef = useRef(false);
   const wheelUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const thumbnailAnimationRef = useRef<number | null>(null);
-  const thumbnailPausedRef = useRef(false);
+  const [thumbnailInteracting, setThumbnailInteracting] = useState(false);
   const activeRoll = pictureRolls[activeRollIndex] ?? pictureRolls[0];
   const frames = activeRoll.frames;
-  const thumbnailCopies = Math.max(5, Math.ceil(36 / frames.length));
+  const thumbnailCopies = Math.max(2, Math.ceil(18 / frames.length));
   const thumbnailFrames = Array.from({ length: thumbnailCopies }, (_, copyIndex) =>
     frames.map((item, frameIndex) => ({ item, frameIndex, copyIndex })),
   ).flat();
@@ -1323,6 +1322,20 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
   const moveFrame = useCallback((direction: number) => {
     setActiveFrame((current) => (current + direction + frames.length) % frames.length);
   }, [frames.length]);
+
+  const normalizeThumbnailRail = useCallback(() => {
+    const rail = thumbnailRailRef.current;
+    const sequence = rail?.querySelector<HTMLElement>(".picture-gallery-thumbnail-sequence");
+    if (!rail || !sequence) return;
+
+    const gap = Number.parseFloat(getComputedStyle(rail).getPropertyValue("--thumbnail-gap")) || 0;
+    const sequenceStep = sequence.scrollWidth + gap;
+    if (sequenceStep <= 0) return;
+
+    if (rail.scrollLeft < sequenceStep * 0.5 || rail.scrollLeft > sequenceStep * 1.5) {
+      rail.scrollLeft = sequenceStep;
+    }
+  }, []);
 
   useEffect(() => {
     pictureRolls.flatMap((roll) => roll.frames).forEach((frame) => {
@@ -1332,7 +1345,6 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
 
     return () => {
       if (wheelUnlockTimerRef.current) clearTimeout(wheelUnlockTimerRef.current);
-      if (thumbnailAnimationRef.current) cancelAnimationFrame(thumbnailAnimationRef.current);
     };
   }, []);
 
@@ -1344,40 +1356,9 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (viewMode !== "gallery") return;
-    const rail = thumbnailRailRef.current;
-    if (!rail) return;
-
-    const placeRailInLoop = () => {
-      const loopWidth = rail.scrollWidth / thumbnailCopies;
-      if (loopWidth > 0) rail.scrollLeft = loopWidth * Math.floor(thumbnailCopies / 2);
-    };
-
-    const setupFrame = requestAnimationFrame(placeRailInLoop);
-    let previousTime = performance.now();
-    const animateRail = (time: number) => {
-      const elapsed = Math.min(time - previousTime, 48);
-      previousTime = time;
-
-      if (!thumbnailPausedRef.current) {
-        rail.scrollLeft -= elapsed * 0.045;
-        const loopWidth = rail.scrollWidth / thumbnailCopies;
-        if (loopWidth > 0) {
-          const lowerBound = loopWidth;
-          const upperBound = loopWidth * (thumbnailCopies - 2);
-          if (rail.scrollLeft >= upperBound) rail.scrollLeft -= loopWidth * (thumbnailCopies - 3);
-          if (rail.scrollLeft < lowerBound) rail.scrollLeft += loopWidth * (thumbnailCopies - 3);
-        }
-      }
-
-      thumbnailAnimationRef.current = requestAnimationFrame(animateRail);
-    };
-
-    thumbnailAnimationRef.current = requestAnimationFrame(animateRail);
-    return () => {
-      cancelAnimationFrame(setupFrame);
-      if (thumbnailAnimationRef.current) cancelAnimationFrame(thumbnailAnimationRef.current);
-    };
-  }, [activeRollIndex, thumbnailCopies, viewMode]);
+    const setupFrame = requestAnimationFrame(normalizeThumbnailRail);
+    return () => cancelAnimationFrame(setupFrame);
+  }, [activeRollIndex, normalizeThumbnailRail, viewMode]);
 
   const selectRoll = (index: number) => {
     setActiveRollIndex(index);
@@ -1490,27 +1471,53 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
       <nav
         ref={thumbnailRailRef}
         className="picture-gallery-thumbnails"
+        data-paused={thumbnailInteracting}
         aria-label="Picture previews"
+        onPointerDown={(event) => {
+          if (event.pointerType === "mouse") setThumbnailInteracting(true);
+        }}
+        onPointerUp={() => {
+          setThumbnailInteracting(false);
+          normalizeThumbnailRail();
+        }}
+        onPointerCancel={() => setThumbnailInteracting(false)}
+        onPointerLeave={() => setThumbnailInteracting(false)}
         onTouchStart={(event) => {
           event.stopPropagation();
-          thumbnailPausedRef.current = true;
+          setThumbnailInteracting(true);
         }}
         onTouchEnd={(event) => {
           event.stopPropagation();
-          thumbnailPausedRef.current = false;
+          setThumbnailInteracting(false);
+          normalizeThumbnailRail();
+        }}
+        onTouchCancel={(event) => {
+          event.stopPropagation();
+          setThumbnailInteracting(false);
         }}
       >
-        {thumbnailFrames.map(({ item, frameIndex, copyIndex }) => (
-          <button
-            type="button"
-            key={`${copyIndex}-${item.image}`}
-            data-active={frameIndex === activeFrame}
-            aria-label={`Picture ${frameIndex + 1}`}
-            onClick={() => setActiveFrame(frameIndex)}
-          >
-            <img src={item.image} alt="" loading="lazy" decoding="async" draggable="false" />
-          </button>
-        ))}
+        <div className="picture-gallery-thumbnail-track">
+          {[0, 1, 2].map((sequenceIndex) => (
+            <div
+              className="picture-gallery-thumbnail-sequence"
+              key={sequenceIndex}
+              aria-hidden={sequenceIndex !== 1}
+            >
+              {thumbnailFrames.map(({ item, frameIndex, copyIndex }) => (
+                <button
+                  type="button"
+                  key={`${sequenceIndex}-${copyIndex}-${item.image}`}
+                  data-active={frameIndex === activeFrame}
+                  aria-label={`Picture ${frameIndex + 1}`}
+                  tabIndex={sequenceIndex === 1 ? 0 : -1}
+                  onClick={() => setActiveFrame(frameIndex)}
+                >
+                  <img src={item.image} alt="" loading="lazy" decoding="async" draggable="false" />
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
       </nav>
 
       <button
