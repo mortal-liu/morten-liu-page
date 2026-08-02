@@ -1305,15 +1305,20 @@ function MusicArchive({
 function PicturesArchive({ onClose }: { onClose: () => void }) {
   const [activeRollIndex, setActiveRollIndex] = useState(0);
   const [activeFrame, setActiveFrame] = useState(0);
+  const [rollMenuOpen, setRollMenuOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const thumbnailRailRef = useRef<HTMLElement>(null);
   const wheelDistanceRef = useRef(0);
   const wheelLockedRef = useRef(false);
   const wheelUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const railDragRef = useRef<{ pointerId: number; startX: number; scrollLeft: number } | null>(null);
-  const railDraggedRef = useRef(false);
+  const thumbnailAnimationRef = useRef<number | null>(null);
+  const thumbnailPausedRef = useRef(false);
   const activeRoll = pictureRolls[activeRollIndex] ?? pictureRolls[0];
   const frames = activeRoll.frames;
+  const thumbnailCopies = Math.max(5, Math.ceil(36 / frames.length));
+  const thumbnailFrames = Array.from({ length: thumbnailCopies }, (_, copyIndex) =>
+    frames.map((item, frameIndex) => ({ item, frameIndex, copyIndex })),
+  ).flat();
 
   const moveFrame = useCallback((direction: number) => {
     setActiveFrame((current) => (current + direction + frames.length) % frames.length);
@@ -1327,21 +1332,58 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
 
     return () => {
       if (wheelUnlockTimerRef.current) clearTimeout(wheelUnlockTimerRef.current);
+      if (thumbnailAnimationRef.current) cancelAnimationFrame(thumbnailAnimationRef.current);
     };
   }, []);
 
   useEffect(() => {
-    const activeThumbnail = thumbnailRailRef.current?.querySelector<HTMLButtonElement>(
-      '[data-active="true"]',
-    );
-    activeThumbnail?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }, [activeFrame, activeRollIndex]);
+    if (rollMenuOpen) return;
+    const timer = window.setInterval(() => moveFrame(1), 6800);
+    return () => window.clearInterval(timer);
+  }, [moveFrame, rollMenuOpen]);
+
+  useEffect(() => {
+    const rail = thumbnailRailRef.current;
+    if (!rail) return;
+
+    const placeRailInLoop = () => {
+      const loopWidth = rail.scrollWidth / thumbnailCopies;
+      if (loopWidth > 0) rail.scrollLeft = loopWidth * Math.floor(thumbnailCopies / 2);
+    };
+
+    const setupFrame = requestAnimationFrame(placeRailInLoop);
+    let previousTime = performance.now();
+    const animateRail = (time: number) => {
+      const elapsed = Math.min(time - previousTime, 48);
+      previousTime = time;
+
+      if (!thumbnailPausedRef.current) {
+        rail.scrollLeft -= elapsed * 0.022;
+        const loopWidth = rail.scrollWidth / thumbnailCopies;
+        if (loopWidth > 0) {
+          const lowerBound = loopWidth;
+          const upperBound = loopWidth * (thumbnailCopies - 2);
+          if (rail.scrollLeft >= upperBound) rail.scrollLeft -= loopWidth * (thumbnailCopies - 3);
+          if (rail.scrollLeft < lowerBound) rail.scrollLeft += loopWidth * (thumbnailCopies - 3);
+        }
+      }
+
+      thumbnailAnimationRef.current = requestAnimationFrame(animateRail);
+    };
+
+    thumbnailAnimationRef.current = requestAnimationFrame(animateRail);
+    return () => {
+      cancelAnimationFrame(setupFrame);
+      if (thumbnailAnimationRef.current) cancelAnimationFrame(thumbnailAnimationRef.current);
+    };
+  }, [activeRollIndex, thumbnailCopies]);
 
   const selectRoll = (index: number) => {
-    if (index === activeRollIndex) return;
-    setActiveRollIndex(index);
-    setActiveFrame(0);
-    thumbnailRailRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+    if (index !== activeRollIndex) {
+      setActiveRollIndex(index);
+      setActiveFrame(0);
+    }
+    setRollMenuOpen(false);
   };
 
   return (
@@ -1350,6 +1392,11 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
       data-panel-reveal
       tabIndex={-1}
       onKeyDown={(event) => {
+        if (event.key === "Escape" && rollMenuOpen) {
+          event.stopPropagation();
+          setRollMenuOpen(false);
+          return;
+        }
         if (event.key === "ArrowLeft") moveFrame(-1);
         if (event.key === "ArrowRight") moveFrame(1);
       }}
@@ -1381,18 +1428,36 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
     >
       <div className="picture-gallery-valance" aria-hidden="true" />
 
-      <nav className="picture-gallery-categories" aria-label="Picture categories">
-        {pictureRolls.map((roll, index) => (
-          <button
-            type="button"
-            key={roll.title}
-            data-active={index === activeRollIndex}
-            onClick={() => selectRoll(index)}
-          >
-            {roll.title}
-          </button>
-        ))}
-      </nav>
+      <div className="picture-gallery-roll-menu" data-open={rollMenuOpen}>
+        <button
+          className="picture-gallery-roll-trigger"
+          type="button"
+          aria-expanded={rollMenuOpen}
+          aria-controls="picture-roll-options"
+          onClick={() => setRollMenuOpen((open) => !open)}
+        >
+          <span>{activeRoll.title}</span>
+          <i aria-hidden="true" />
+        </button>
+
+        <nav
+          id="picture-roll-options"
+          className="picture-gallery-roll-options"
+          aria-label="Picture categories"
+          onWheel={(event) => event.stopPropagation()}
+        >
+          {pictureRolls.map((roll, index) => (
+            <button
+              type="button"
+              key={roll.title}
+              data-active={index === activeRollIndex}
+              onClick={() => selectRoll(index)}
+            >
+              {roll.title}
+            </button>
+          ))}
+        </nav>
+      </div>
 
       <div className="picture-gallery-images" aria-live="polite">
         {frames.map((item, index) => (
@@ -1412,48 +1477,26 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
         ref={thumbnailRailRef}
         className="picture-gallery-thumbnails"
         aria-label="Picture previews"
-        onPointerDown={(event) => {
-          if (event.pointerType !== "mouse") return;
-          railDraggedRef.current = false;
-          railDragRef.current = {
-            pointerId: event.pointerId,
-            startX: event.clientX,
-            scrollLeft: event.currentTarget.scrollLeft,
-          };
-          event.currentTarget.setPointerCapture(event.pointerId);
+        onPointerEnter={() => { thumbnailPausedRef.current = true; }}
+        onPointerLeave={() => { thumbnailPausedRef.current = false; }}
+        onFocus={() => { thumbnailPausedRef.current = true; }}
+        onBlur={() => { thumbnailPausedRef.current = false; }}
+        onTouchStart={(event) => {
+          event.stopPropagation();
+          thumbnailPausedRef.current = true;
         }}
-        onPointerMove={(event) => {
-          const drag = railDragRef.current;
-          if (!drag || drag.pointerId !== event.pointerId) return;
-          const distance = event.clientX - drag.startX;
-          if (Math.abs(distance) > 4) railDraggedRef.current = true;
-          event.currentTarget.scrollLeft = drag.scrollLeft - distance * 1.75;
+        onTouchEnd={(event) => {
+          event.stopPropagation();
+          thumbnailPausedRef.current = false;
         }}
-        onPointerUp={(event) => {
-          if (railDragRef.current?.pointerId === event.pointerId) {
-            railDragRef.current = null;
-            event.currentTarget.releasePointerCapture(event.pointerId);
-          }
-        }}
-        onPointerCancel={() => {
-          railDragRef.current = null;
-        }}
-        onTouchStart={(event) => event.stopPropagation()}
-        onTouchEnd={(event) => event.stopPropagation()}
       >
-        {frames.map((item, index) => (
+        {thumbnailFrames.map(({ item, frameIndex, copyIndex }) => (
           <button
             type="button"
-            key={item.image}
-            data-active={index === activeFrame}
-            aria-label={`Picture ${index + 1}`}
-            onClick={() => {
-              if (railDraggedRef.current) {
-                railDraggedRef.current = false;
-                return;
-              }
-              setActiveFrame(index);
-            }}
+            key={`${copyIndex}-${item.image}`}
+            data-active={frameIndex === activeFrame}
+            aria-label={`Picture ${frameIndex + 1}`}
+            onClick={() => setActiveFrame(frameIndex)}
           >
             <img src={item.image} alt="" loading="lazy" decoding="async" draggable="false" />
           </button>
