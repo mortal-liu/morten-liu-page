@@ -49,7 +49,9 @@ test("keeps expanding content in the central content registry", async () => {
 
   assert.match(page, /from "\.\/content"/);
   assert.match(page, /storyArticles\.map/);
-  assert.match(page, /pictureRolls\.map/);
+  assert.match(page, /pictureRolls\.flatMap/);
+  assert.match(page, /className="picture-gallery"/);
+  assert.doesNotMatch(page, /picture-frame-meta|picture-film-footer|picture-roll-drawer/);
   assert.match(page, /thinkingEntries\.map/);
   assert.match(page, /loading="lazy"/);
   assert.doesNotMatch(page, /const storyPrologue|const storyIndexEntries/);

@@ -1040,8 +1040,7 @@ export default function Home() {
       </section>
 
       <section className="experience-panel panel-pictures" data-panel="pictures" aria-hidden="true">
-        <PanelHeader index="03" title="PICTURES" onClose={() => closePanelRef.current()} />
-        <PicturesArchive />
+        <PicturesArchive onClose={() => closePanelRef.current()} />
       </section>
 
       <section
@@ -1303,178 +1302,70 @@ function MusicArchive({
   );
 }
 
-function PicturesArchive() {
-  const [activeRollIndex, setActiveRollIndex] = useState(0);
+function PicturesArchive({ onClose }: { onClose: () => void }) {
+  const frames = pictureRolls.flatMap((roll) => roll.frames);
   const [activeFrame, setActiveFrame] = useState(0);
-  const [rollsOpen, setRollsOpen] = useState(false);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const filmStripRef = useRef<HTMLDivElement>(null);
-  const activeRoll = pictureRolls[activeRollIndex] ?? pictureRolls[0];
-  const frame = activeRoll.frames[activeFrame] ?? activeRoll.frames[0];
+  const touchStartX = useRef<number | null>(null);
 
   const moveFrame = useCallback((direction: number) => {
-    setActiveFrame((current) => (
-      (current + direction + activeRoll.frames.length) % activeRoll.frames.length
-    ));
-  }, [activeRoll.frames.length]);
-
-  const selectRoll = (index: number) => {
-    setActiveRollIndex(index);
-    setActiveFrame(0);
-    setRollsOpen(false);
-  };
-
-  useEffect(() => {
-    if (!rollsOpen && !lightboxOpen) return;
-
-    const onKeydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        if (lightboxOpen) setLightboxOpen(false);
-        else setRollsOpen(false);
-      }
-      if (lightboxOpen && event.key === "ArrowLeft") moveFrame(-1);
-      if (lightboxOpen && event.key === "ArrowRight") moveFrame(1);
-    };
-
-    document.addEventListener("keydown", onKeydown, true);
-    return () => document.removeEventListener("keydown", onKeydown, true);
-  }, [lightboxOpen, moveFrame, rollsOpen]);
+    setActiveFrame((current) => (current + direction + frames.length) % frames.length);
+  }, [frames.length]);
 
   return (
     <div
-      className="picture-darkroom"
+      className="picture-gallery"
       data-panel-reveal
       tabIndex={-1}
       onKeyDown={(event) => {
         if (event.key === "ArrowLeft") moveFrame(-1);
         if (event.key === "ArrowRight") moveFrame(1);
       }}
+      onTouchStart={(event) => {
+        touchStartX.current = event.changedTouches[0]?.clientX ?? null;
+      }}
+      onTouchEnd={(event) => {
+        if (touchStartX.current === null) return;
+        const distance = (event.changedTouches[0]?.clientX ?? touchStartX.current) - touchStartX.current;
+        touchStartX.current = null;
+        if (Math.abs(distance) < 44) return;
+        moveFrame(distance > 0 ? -1 : 1);
+      }}
     >
-      <div className="picture-leaf-shadow" aria-hidden="true"><i /><i /><i /><i /></div>
-
-      <header className="picture-darkroom-heading">
-        <div>
-          <p>ROLL {activeRoll.index} / {activeRoll.title}</p>
-          <span>PRIVATE DARKROOM · {activeRoll.label}</span>
-        </div>
-        <button type="button" onClick={() => setRollsOpen(true)}>
-          ALL ROLLS <span>查看全部胶卷</span><i aria-hidden="true">＋</i>
-        </button>
-      </header>
-
-      <div className="picture-viewer">
-        <div className="picture-frame-stage">
-          <button
-            className="picture-main-frame"
-            type="button"
-            aria-label={`全屏查看：${frame.title}`}
-            onClick={() => setLightboxOpen(true)}
-          >
-            {activeRoll.frames.map((item, index) => (
-              <img
-                key={item.index}
-                data-active={index === activeFrame}
-                src={item.image}
-                alt={index === activeFrame ? item.alt : ""}
-                aria-hidden={index !== activeFrame}
-                loading={index === activeFrame ? "eager" : "lazy"}
-                decoding="async"
-              />
-            ))}
-            <span className="picture-frame-mark picture-frame-mark--top">MORTEN—LIU / {frame.index}</span>
-            <span className="picture-frame-mark picture-frame-mark--bottom">OPEN FULL FRAME ↗</span>
-          </button>
-        </div>
-
-        <aside className="picture-frame-meta" key={frame.index}>
-          <p>FRAME {frame.index} / {String(activeRoll.frames.length).padStart(3, "0")}</p>
-          <h2>{frame.title}</h2>
-          <dl>
-            <div><dt>DATE</dt><dd>{frame.date}</dd></div>
-            <div><dt>LOCATION</dt><dd>{frame.place}</dd></div>
-          </dl>
-          <blockquote>{frame.caption}</blockquote>
-          <div className="picture-frame-controls">
-            <button type="button" aria-label="上一张照片" onClick={() => moveFrame(-1)}>←</button>
-            <span>{String(activeFrame + 1).padStart(2, "0")} / {String(activeRoll.frames.length).padStart(2, "0")}</span>
-            <button type="button" aria-label="下一张照片" onClick={() => moveFrame(1)}>→</button>
-          </div>
-        </aside>
+      <div className="picture-gallery-images" aria-live="polite">
+        {frames.map((item, index) => (
+          <img
+            key={item.image}
+            data-active={index === activeFrame}
+            src={item.image}
+            alt={index === activeFrame ? item.alt : ""}
+            aria-hidden={index !== activeFrame}
+            loading={index < 2 ? "eager" : "lazy"}
+            decoding="async"
+          />
+        ))}
       </div>
 
-      <footer className="picture-film-footer">
-        <div>
-          <span>CONTACT SHEET</span>
-          <small>拖动 / 滚轮 / 方向键</small>
-        </div>
-        <div
-          className="picture-film-strip"
-          ref={filmStripRef}
-          onWheel={(event) => {
-            if (!filmStripRef.current) return;
-            event.preventDefault();
-            filmStripRef.current.scrollBy({
-              left: event.deltaX + event.deltaY,
-              behavior: "smooth",
-            });
-          }}
-        >
-          {activeRoll.frames.map((item, index) => (
-            <button
-              type="button"
-              data-active={index === activeFrame}
-              key={item.index}
-              aria-label={`查看第 ${index + 1} 张照片：${item.title}`}
-              onClick={() => setActiveFrame(index)}
-            >
-              <span>{item.index}</span>
-              <img src={item.image} alt="" aria-hidden="true" />
-            </button>
-          ))}
-          <div className="picture-film-pending" aria-label="等待下一张照片">
-            <span>{String(activeRoll.frames.length + 1).padStart(3, "0")}</span><i aria-hidden="true" /><small>NEXT FRAME</small>
-          </div>
-        </div>
-      </footer>
+      <button className="picture-gallery-close" type="button" aria-label="关闭照片" onClick={onClose}>
+        <span aria-hidden="true">×</span>
+      </button>
+      <button className="picture-gallery-step picture-gallery-step--previous" type="button" aria-label="上一张照片" onClick={() => moveFrame(-1)}>
+        <span aria-hidden="true">‹</span>
+      </button>
+      <button className="picture-gallery-step picture-gallery-step--next" type="button" aria-label="下一张照片" onClick={() => moveFrame(1)}>
+        <span aria-hidden="true">›</span>
+      </button>
 
-      {rollsOpen && (
-        <section className="picture-roll-drawer" role="dialog" aria-modal="true" aria-label="全部胶卷">
-          <header>
-            <div><span>VISUAL ARCHIVE</span><h2>All Rolls</h2></div>
-            <button type="button" aria-label="关闭全部胶卷" onClick={() => setRollsOpen(false)}>关闭 <i aria-hidden="true">×</i></button>
-          </header>
-          <div className="picture-roll-index">
-            {pictureRolls.map((roll, index) => (
-              <button
-                type="button"
-                data-active={index === activeRollIndex}
-                key={roll.index}
-                onClick={() => selectRoll(index)}
-              >
-                <img src={roll.frames[0].image} alt="" aria-hidden="true" loading="lazy" decoding="async" />
-                <span>ROLL {roll.index}</span>
-                <strong>{roll.title}</strong>
-                <small>{String(roll.frames.length).padStart(2, "0")} FRAME · {roll.label}</small>
-              </button>
-            ))}
-            <div className="picture-roll-pending">
-              <span>ROLL {String(pictureRolls.length + 1).padStart(2, "0")}</span>
-              <strong>等待下一卷</strong>
-              <small>NOT EXPOSED YET</small>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {lightboxOpen && (
-        <div className="picture-lightbox" role="dialog" aria-modal="true" aria-label={frame.title}>
-          <button type="button" aria-label="关闭全屏照片" onClick={() => setLightboxOpen(false)}>关闭 <span aria-hidden="true">×</span></button>
-          <img src={frame.image} alt={frame.alt} />
-          <p><span>{frame.index}</span>{frame.title}</p>
-        </div>
-      )}
+      <nav className="picture-gallery-dots" aria-label="选择照片">
+        {frames.map((item, index) => (
+          <button
+            type="button"
+            key={item.image}
+            data-active={index === activeFrame}
+            aria-label={`第 ${index + 1} 张照片`}
+            onClick={() => setActiveFrame(index)}
+          />
+        ))}
+      </nav>
     </div>
   );
 }
