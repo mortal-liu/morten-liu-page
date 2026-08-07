@@ -24,6 +24,24 @@ import type {
 
 type StoryView = "cover" | "archive" | "article";
 
+const warmedImageSources = new Set<string>();
+
+function warmImages(sources: Array<string | undefined>, priority: "high" | "low" = "low") {
+  if (typeof Image === "undefined") return;
+
+  Array.from(new Set(sources.filter((source): source is string => Boolean(source)))).forEach((source) => {
+    if (warmedImageSources.has(source)) return;
+    warmedImageSources.add(source);
+
+    const image = new Image();
+    image.decoding = "async";
+    image.fetchPriority = priority;
+    image.addEventListener("error", () => warmedImageSources.delete(source), { once: true });
+    image.src = source;
+    void image.decode().catch(() => undefined);
+  });
+}
+
 export default function Home() {
   const [storyView, setStoryView] = useState<StoryView>("cover");
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
@@ -38,7 +56,6 @@ export default function Home() {
   const [bookSelection, setBookSelection] = useState(0);
   const [thinkingSelection, setThinkingSelection] = useState<number | null>(null);
   const pageRef = useRef<HTMLElement>(null);
-  const preloadedFavoriteImagesRef = useRef<HTMLImageElement[]>([]);
   const favoriteEnterTimerRef = useRef<number | null>(null);
   const favoriteLeaveTimerRef = useRef<number | null>(null);
   const favoriteViewRef = useRef<FavoriteId | null>(null);
@@ -131,17 +148,6 @@ export default function Home() {
   });
 
   useEffect(() => {
-    const preloadImages = (sources: string[], priority: "high" | "low") => (
-      sources.map((source) => {
-        const image = new Image();
-        image.decoding = "async";
-        image.fetchPriority = priority;
-        image.src = source;
-        void image.decode().catch(() => undefined);
-        return image;
-      })
-    );
-
     const warmVisibleArchives = () => {
       const priorityFavoriteSources = [
         featuredQuotes[1]?.image,
@@ -149,11 +155,10 @@ export default function Home() {
         ...screenFavorites.slice(0, 2).map((item) => item.image),
         ...musicArtists.slice(0, 2).map((artist) => artist.image),
         ...bookFavorites.slice(0, 1).map((item) => item.image),
-      ].filter((source): source is string => Boolean(source));
-      preloadedFavoriteImagesRef.current = preloadImages(
-        Array.from(new Set(priorityFavoriteSources)),
-        "low",
-      );
+        ...pictureRolls.map((roll) => roll.cover),
+        ...pictureRolls.map((roll) => roll.frames[0]?.image),
+      ];
+      warmImages(priorityFavoriteSources, "low");
     };
 
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -167,12 +172,20 @@ export default function Home() {
     return () => {
       if (idleCallback) window.cancelIdleCallback(idleCallback);
       if (timer) clearTimeout(timer);
-      preloadedFavoriteImagesRef.current = [];
     };
   }, []);
 
   const enterFavoriteSection = (id: FavoriteId) => {
     if (favoriteEnterTimerRef.current || favoriteLeaveTimerRef.current) return;
+
+    const requestedSources = id === "screen"
+      ? screenFavorites.map((item) => item.image)
+      : id === "books"
+        ? bookFavorites.map((item) => item.image)
+        : musicArtists.map((artist) => artist.image);
+    warmImages(requestedSources.slice(0, 1), "high");
+    warmImages(requestedSources.slice(1), "low");
+
     if (id === "music") {
       musicArtistSelectionRef.current = null;
       setMusicArtistSelection(null);
@@ -677,15 +690,26 @@ export default function Home() {
         window.addEventListener("pointermove", move);
         cleanups.push(() => window.removeEventListener("pointermove", move));
 
-        page.querySelectorAll<HTMLElement>("button, a").forEach((target) => {
-          const enter = () => cursor.classList.add("is-active");
-          const leave = () => cursor.classList.remove("is-active");
-          target.addEventListener("pointerenter", enter);
-          target.addEventListener("pointerleave", leave);
-          cleanups.push(() => {
-            target.removeEventListener("pointerenter", enter);
-            target.removeEventListener("pointerleave", leave);
-          });
+        const showCursorTarget = (event: PointerEvent) => {
+          const interactiveTarget = event.target instanceof Element
+            ? event.target.closest("button, a")
+            : null;
+          if (interactiveTarget) cursor.classList.add("is-active");
+        };
+        const updateCursorAfterLeave = (event: PointerEvent) => {
+          const nextInteractiveTarget = event.relatedTarget instanceof Element
+            ? event.relatedTarget.closest("button, a")
+            : null;
+          cursor.classList.toggle("is-active", Boolean(nextInteractiveTarget));
+        };
+        const clearCursorTarget = () => cursor.classList.remove("is-active");
+        page.addEventListener("pointerover", showCursorTarget);
+        page.addEventListener("pointerout", updateCursorAfterLeave);
+        page.addEventListener("pointerleave", clearCursorTarget);
+        cleanups.push(() => {
+          page.removeEventListener("pointerover", showCursorTarget);
+          page.removeEventListener("pointerout", updateCursorAfterLeave);
+          page.removeEventListener("pointerleave", clearCursorTarget);
         });
       }
     }
@@ -763,7 +787,7 @@ export default function Home() {
       <div className="home-screen" data-home-screen>
         <header className="topbar" data-home-return>
           <a className="monogram" href="#home" aria-label="回到主页">
-            <span className="monogram-mark"><img src="/avatar.jpg" alt="" /></span>
+            <span className="monogram-mark"><img src="/avatar.jpg" alt="" width="64" height="64" decoding="async" /></span>
             <span className="monogram-name">Morten Liu</span>
           </a>
         </header>
@@ -776,8 +800,8 @@ export default function Home() {
           data-quote-length={featuredQuotes[0].text.length > 30 ? "long" : "standard"}
         >
           <div className="quote-backdrop" aria-hidden="true">
-            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="0" src={featuredQuotes[0].backdropImage} alt="" />
-            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="1" src={featuredQuotes[0].backdropImage} alt="" />
+            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="0" src={featuredQuotes[0].backdropImage} alt="" fetchPriority="high" decoding="async" />
+            <img className="quote-backdrop-image" data-quote-backdrop-image data-media-slot="1" src={featuredQuotes[0].backdropImage} alt="" fetchPriority="low" decoding="async" />
           </div>
           <div className="quote-main">
             <div className="quote-left">
@@ -804,8 +828,8 @@ export default function Home() {
 
             <figure className="quote-cover clip-line">
               <div className="quote-cover-art" data-home-reveal data-home-return>
-                <img className="quote-cover-image" data-cover-image data-media-slot="0" src={featuredQuotes[0].image} alt={featuredQuotes[0].imageAlt} />
-                <img className="quote-cover-image" data-cover-image data-media-slot="1" src={featuredQuotes[0].image} alt="" />
+                <img className="quote-cover-image" data-cover-image data-media-slot="0" src={featuredQuotes[0].image} alt={featuredQuotes[0].imageAlt} fetchPriority="high" decoding="async" />
+                <img className="quote-cover-image" data-cover-image data-media-slot="1" src={featuredQuotes[0].image} alt="" fetchPriority="low" decoding="async" />
                 <div className="quote-cover-copy">
                   <strong data-cover-title>{featuredQuotes[0].coverTitle}</strong>
                   <span className="quote-cover-meta" data-cover-meta>{featuredQuotes[0].coverMeta}</span>
@@ -1337,22 +1361,27 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
     }
   }, []);
 
-  useEffect(() => {
-    pictureRolls.flatMap((roll) => roll.frames).forEach((frame) => {
-      const preload = new Image();
-      preload.src = frame.image;
-    });
-
-    return () => {
-      if (wheelUnlockTimerRef.current) clearTimeout(wheelUnlockTimerRef.current);
-    };
+  useEffect(() => () => {
+    if (wheelUnlockTimerRef.current) clearTimeout(wheelUnlockTimerRef.current);
   }, []);
 
   useEffect(() => {
-    if (viewMode !== "gallery") return;
+    const previousFrame = frames[(activeFrame - 1 + frames.length) % frames.length];
+    const currentFrame = frames[activeFrame];
+    const nextFrame = frames[(activeFrame + 1) % frames.length];
+    warmImages([currentFrame?.image], "high");
+    warmImages([previousFrame?.image, nextFrame?.image], "low");
+  }, [activeFrame, frames]);
+
+  useEffect(() => {
+    if (
+      viewMode !== "gallery"
+      || thumbnailInteracting
+      || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) return;
     const timer = window.setTimeout(() => moveFrame(1), 5200);
     return () => window.clearTimeout(timer);
-  }, [activeFrame, moveFrame, viewMode]);
+  }, [activeFrame, moveFrame, thumbnailInteracting, viewMode]);
 
   useEffect(() => {
     if (viewMode !== "gallery") return;
@@ -1361,6 +1390,9 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
   }, [activeRollIndex, normalizeThumbnailRail, viewMode]);
 
   const selectRoll = (index: number) => {
+    const selectedFrames = pictureRolls[index]?.frames ?? [];
+    warmImages(selectedFrames.slice(0, 1).map((frame) => frame.image), "high");
+    warmImages(selectedFrames.slice(1, 3).map((frame) => frame.image), "low");
     setActiveRollIndex(index);
     setActiveFrame(0);
     setViewMode("gallery");
@@ -1430,7 +1462,13 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
                 data-active={index === activeRollIndex}
                 onClick={() => selectRoll(index)}
               >
-                <img src={roll.cover} alt={`${roll.title} 海报`} loading="eager" decoding="async" />
+                <img
+                  src={roll.cover}
+                  alt={`${roll.title} 海报`}
+                  loading={index < 2 ? "eager" : "lazy"}
+                  fetchPriority={index === activeRollIndex ? "high" : "auto"}
+                  decoding="async"
+                />
                 <span className="picture-library-card-shade" aria-hidden="true" />
                 <span className="picture-library-card-copy">
                   <small>{roll.index} · {String(roll.frames.length).padStart(2, "0")} FRAMES</small>
@@ -1462,7 +1500,8 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
             src={item.image}
             alt={index === activeFrame ? item.alt : ""}
             aria-hidden={index !== activeFrame}
-            loading={index < 2 ? "eager" : "lazy"}
+            loading={index === activeFrame ? "eager" : "lazy"}
+            fetchPriority={index === activeFrame ? "high" : "auto"}
             decoding="async"
           />
         ))}
@@ -1508,8 +1547,9 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
                   type="button"
                   key={`${sequenceIndex}-${copyIndex}-${item.image}`}
                   data-active={frameIndex === activeFrame}
-                  aria-label={`Picture ${frameIndex + 1}`}
-                  tabIndex={sequenceIndex === 1 ? 0 : -1}
+                  aria-label={sequenceIndex === 1 && copyIndex === 0 ? `Picture ${frameIndex + 1}` : undefined}
+                  aria-hidden={sequenceIndex !== 1 || copyIndex !== 0}
+                  tabIndex={sequenceIndex === 1 && copyIndex === 0 ? 0 : -1}
                   onClick={() => setActiveFrame(frameIndex)}
                 >
                   <img src={item.image} alt="" loading="lazy" decoding="async" draggable="false" />
@@ -1579,7 +1619,7 @@ function ScreenArchive({
 
   return (
     <section className="favorite-archive screen-archive" data-favorite-detail-root tabIndex={-1} aria-label="影视收藏">
-      <img className="screen-backdrop" key={activeItem.image} src={activeItem.image} alt="" aria-hidden="true" />
+      <img className="screen-backdrop" key={activeItem.image} src={activeItem.image} alt="" aria-hidden="true" fetchPriority="high" decoding="async" />
       <span className="screen-shade" aria-hidden="true" />
 
       <div className="screen-stage">
@@ -1612,7 +1652,13 @@ function ScreenArchive({
         <div className="screen-poster-rail" key={`rail-${kind}`} aria-label={`${kind}海报列表`}>
           {items.map((item, index) => (
             <button type="button" data-selected={index === activeIndex} key={item.title} onClick={() => onSelect(index)}>
-              <img src={item.image} alt={`${item.title}海报`} loading="lazy" decoding="async" />
+              <img
+                src={item.image}
+                alt={`${item.title}海报`}
+                loading={index === activeIndex ? "eager" : "lazy"}
+                fetchPriority={index === activeIndex ? "high" : "auto"}
+                decoding="async"
+              />
               <span><small>{String(index + 1).padStart(2, "0")}</small><strong>{item.title}</strong></span>
             </button>
           ))}
@@ -1656,6 +1702,7 @@ function BookArchive({
                 alt={index === activeIndex ? `${item.title}封面` : ""}
                 aria-hidden={index !== activeIndex}
                 loading={index === activeIndex ? "eager" : "lazy"}
+                fetchPriority={index === activeIndex ? "high" : "auto"}
                 decoding="async"
               />
             ))}

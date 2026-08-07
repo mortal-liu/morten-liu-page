@@ -49,7 +49,9 @@ test("keeps expanding content in the central content registry", async () => {
 
   assert.match(page, /from "\.\/content"/);
   assert.match(page, /storyArticles\.map/);
-  assert.match(page, /pictureRolls\.flatMap/);
+  assert.match(page, /pictureRolls\.map/);
+  assert.match(page, /warmImages/);
+  assert.doesNotMatch(page, /pictureRolls\.flatMap\(\(roll\) => roll\.frames\)/);
   assert.match(page, /className="picture-gallery"/);
   assert.match(page, /className="picture-library"/);
   assert.match(page, /className="picture-library-card"/);
@@ -82,5 +84,6 @@ test("keeps expanding content in the central content registry", async () => {
   assert.doesNotMatch(content, /从一棵树开始|image: "\/avatar\.jpg"/);
 
   assert.match(layout, /title:\s*"Morten-Liu/);
+  assert.match(layout, /音乐、影视、书籍/);
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
 });
