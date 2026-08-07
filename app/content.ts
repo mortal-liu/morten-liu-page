@@ -329,6 +329,41 @@ export const pictureRolls = [
       },
     ],
   },
+  {
+    index: "03",
+    title: "帅照",
+    label: "PORTRAITS / SELECTED",
+    cover: "/pictures/portraits/01-brad-pitt-press.webp",
+    frames: [
+      {
+        index: "001",
+        image: "/pictures/portraits/01-brad-pitt-press.webp",
+        alt: "Brad Pitt 戴着墨镜接受红毯采访",
+        title: "Brad Pitt",
+        date: "",
+        place: "PRESS ARCHIVE",
+        caption: "",
+      },
+      {
+        index: "002",
+        image: "/pictures/portraits/02-brad-pitt-unleashed.webp",
+        alt: "Brad Pitt 戴着墨镜，嘴里叼着一支烟",
+        title: "Brad Pitt",
+        date: "1999",
+        place: "W MAGAZINE / STEVEN KLEIN",
+        caption: "",
+      },
+      {
+        index: "003",
+        image: "/pictures/portraits/03-michael-corleone-hearing.webp",
+        alt: "黑白画面中的 Michael Corleone 站在听证会人群中央",
+        title: "Michael Corleone",
+        date: "1974",
+        place: "THE GODFATHER PART II",
+        caption: "",
+      },
+    ],
+  },
 ];
 
 const screenNotePrompt = "这里留给你的短评、喜欢的角色，或看完之后仍然没有散去的感受。";

@@ -1445,11 +1445,11 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
       <div className="picture-gallery-valance" aria-hidden="true" />
 
       {viewMode === "library" && (
-        <section className="picture-library" aria-label="选择图片作品">
+        <section className="picture-library" aria-label="选择图片影集">
           <header className="picture-library-heading">
             <span>PICTURE ARCHIVE</span>
-            <h2>选择一部作品</h2>
-            <p>从一部影视作品进入它留下的画面。</p>
+            <h2>选择一个影集</h2>
+            <p>从一组照片进入它留下的画面。</p>
           </header>
 
           <div className="picture-library-grid" role="list">
@@ -1464,7 +1464,7 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
               >
                 <img
                   src={roll.cover}
-                  alt={`${roll.title} 海报`}
+                  alt={`${roll.title} 影集封面`}
                   loading={index < 2 ? "eager" : "lazy"}
                   fetchPriority={index === activeRollIndex ? "high" : "auto"}
                   decoding="async"
@@ -1484,7 +1484,7 @@ function PicturesArchive({ onClose }: { onClose: () => void }) {
       <button
         className="picture-gallery-roll-trigger"
         type="button"
-        aria-label="选择另一部影视作品"
+        aria-label="选择另一组照片"
         onClick={() => setViewMode("library")}
       >
         <small>作品库</small>
