@@ -331,7 +331,7 @@ export const pictureRolls = [
   },
   {
     index: "03",
-    title: "帅照",
+    title: "银幕面孔",
     label: "PORTRAITS / SELECTED",
     cover: "/pictures/portraits/01-brad-pitt-press.webp",
     frames: [

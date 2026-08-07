@@ -82,7 +82,7 @@ test("keeps expanding content in the central content registry", async () => {
 
   assert.match(content, /title: "Better Call Saul"/);
   assert.match(content, /title: "Breaking Bad"/);
-  assert.match(content, /title: "帅照"/);
+  assert.match(content, /title: "银幕面孔"/);
   assert.doesNotMatch(content, /从一棵树开始|image: "\/avatar\.jpg"/);
 
   assert.match(layout, /title:\s*"Morten-Liu/);
